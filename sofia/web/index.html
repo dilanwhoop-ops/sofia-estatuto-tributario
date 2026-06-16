@@ -48,8 +48,23 @@
     background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.3px}
   .brand p{margin:0;font-size:.73rem;color:var(--muted);font-weight:500}
   .brand .co{background:var(--grad-warm);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:700}
-  header .badge{margin-left:auto;display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:#0f766e;
+  header .badge{margin-left:.55rem;display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:#0f766e;
     font-weight:600;border:1px solid #b9efe0;background:#ecfdf5;padding:.3rem .7rem;border-radius:99px}
+  .voice-toggle{margin-left:auto;width:40px;height:40px;border-radius:13px;border:1px solid var(--line);
+    background:#fff;cursor:pointer;display:grid;place-items:center;color:var(--muted);transition:.18s}
+  .voice-toggle.on{background:var(--accent-soft);border-color:#9be7d4;color:var(--teal)}
+  .voice-toggle:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .controls{margin-top:.7rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .speak-btn{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;font-weight:600;border:1px solid var(--line);
+    background:#fff;color:var(--teal);padding:.34rem .75rem;border-radius:99px;cursor:pointer;transition:.15s}
+  .speak-btn:hover{border-color:#9be7d4;background:var(--accent-soft);transform:translateY(-1px)}
+  .speak-btn.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(14,165,233,.3)}
+  .speak-btn .eq{display:none;gap:2px;align-items:flex-end;height:13px}
+  .speak-btn.on .eq{display:inline-flex}.speak-btn.on .ico{display:none}
+  .speak-btn .eq i{width:2.5px;background:#fff;border-radius:2px;animation:eq .8s ease-in-out infinite}
+  .speak-btn .eq i:nth-child(1){height:6px;animation-delay:-.4s}.speak-btn .eq i:nth-child(2){height:12px}
+  .speak-btn .eq i:nth-child(3){height:8px;animation-delay:-.2s}.speak-btn .eq i:nth-child(4){height:11px;animation-delay:-.6s}
+  @keyframes eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
   .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 0 rgba(16,185,129,.6);animation:pulse 2s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 
@@ -168,6 +183,9 @@
       <h1>SOFIA</h1>
       <p>Estatuto Tributario de <span class="co">Colombia</span></p>
     </div>
+    <button class="voice-toggle on" id="voiceToggle" title="Leer las respuestas en voz alta (gratis)" aria-label="Voz automática">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.06a7 7 0 0 1 0 13.48v2.06A9 9 0 0 0 14 3.2z"/></svg>
+    </button>
     <span class="badge"><span class="dot"></span>En línea · IA</span>
   </header>
 
@@ -270,10 +288,43 @@ function addUser(text){
 }
 function addSofia(){
   const el=document.createElement('div');el.className='msg sofia';
-  el.innerHTML=`<div class="av">${avatarSVG()}</div><div class="body"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  el.innerHTML=`<div class="av">${avatarSVG()}</div><div class="body"><div class="answer"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
   thread.appendChild(el);scroll();
-  return {body:el.querySelector('.body'),av:el.querySelector('.sofia-avatar')};
+  return {body:el.querySelector('.body'),answer:el.querySelector('.answer'),av:el.querySelector('.sofia-avatar')};
 }
+
+// ── Voz: lectura en voz alta (Web Speech API — gratis e ilimitado) ──
+let autoRead=true,_voices=[];
+function loadVoices(){try{_voices=speechSynthesis.getVoices()||[];}catch(e){}}
+if('speechSynthesis' in window){loadVoices();if(speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=loadVoices;}
+function esVoice(){
+  const es=_voices.filter(v=>/^es/i.test(v.lang));
+  for(const p of ['es-co','es-us','es-mx','es-419','es-es','es']){const v=es.find(x=>x.lang.toLowerCase().startsWith(p));if(v)return v;}
+  return es.find(v=>/google/i.test(v.name))||es[0]||null;
+}
+let _curBtn=null,_curAv=null;
+function ttsStop(){try{speechSynthesis.cancel();}catch(e){}if(_curBtn)_curBtn.classList.remove('on');if(_curAv)_curAv.parentElement.classList.remove('speaking');_curBtn=null;_curAv=null;}
+function ttsSpeak(text,btn,av){
+  if(!('speechSynthesis' in window)||!text)return;
+  ttsStop();
+  const u=new SpeechSynthesisUtterance(text.slice(0,4500));
+  const v=esVoice();if(v){u.voice=v;u.lang=v.lang;}else u.lang='es-ES';
+  u.rate=1.03;u.pitch=1.05;
+  u.onstart=()=>{if(av)av.parentElement.classList.add('speaking');};
+  u.onend=ttsStop;u.onerror=ttsStop;
+  _curBtn=btn;_curAv=av;if(btn)btn.classList.add('on');
+  speechSynthesis.speak(u);
+}
+function addControls(body,answer,av){
+  const row=document.createElement('div');row.className='controls';
+  const btn=document.createElement('button');btn.className='speak-btn';btn.type='button';
+  btn.innerHTML='<span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg></span><span class="eq"><i></i><i></i><i></i><i></i></span><span class="lbl">Escuchar</span>';
+  btn.onclick=()=>{if(_curBtn===btn)ttsStop();else ttsSpeak(answer.innerText.trim(),btn,av);};
+  row.appendChild(btn);body.appendChild(row);
+  if(autoRead)ttsSpeak(answer.innerText.trim(),btn,av);
+}
+const voiceToggle=document.getElementById('voiceToggle');
+voiceToggle.onclick=()=>{autoRead=!autoRead;voiceToggle.classList.toggle('on',autoRead);if(!autoRead)ttsStop();};
 function scroll(){main.scrollTo({top:main.scrollHeight,behavior:'smooth'});}
 
 function renderSources(body,sources){
@@ -300,9 +351,10 @@ document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==
 form.addEventListener('submit',async e=>{
   e.preventDefault();const text=input.value.trim();if(!text||busy)return;
   busy=true;sendBtn.disabled=true;input.value='';input.style.height='auto';
+  ttsStop();
   if(hero)hero.remove();
   addUser(text);
-  const {body,av}=addSofia();
+  const {body,answer,av}=addSofia();
   let acc='',started=false;
   try{
     const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history})});
@@ -316,18 +368,19 @@ form.addEventListener('submit',async e=>{
         for(const line of block.split('\n')){if(line.startsWith('event:'))ev=line.slice(6).trim();else if(line.startsWith('data:'))data+=line.slice(5).trim();}
         if(!data)continue;let obj;try{obj=JSON.parse(data);}catch{continue;}
         if(ev==='sources'){body._sources=obj.sources;}
-        else if(ev==='error'){body.innerHTML='<p>⚠️ '+(obj.message||'Error')+'</p>';av.parentElement.classList.remove('speaking');}
+        else if(ev==='error'){answer.innerHTML='<p>⚠️ '+(obj.message||'Error')+'</p>';av.parentElement.classList.remove('speaking');}
         else if(ev==='done'){av.parentElement.classList.remove('speaking');}
         else if(obj.t!==undefined){
-          if(!started){started=true;body.innerHTML='';av.parentElement.classList.add('speaking');}
-          acc+=obj.t;body.innerHTML=md(acc);scroll();
+          if(!started){started=true;answer.innerHTML='';av.parentElement.classList.add('speaking');}
+          acc+=obj.t;answer.innerHTML=md(acc);scroll();
         }
       }
     }
     av.parentElement.classList.remove('speaking');
+    if(started)addControls(body,answer,av);
     if(body._sources)renderSources(body,body._sources);
     history.push({role:'user',content:text});history.push({role:'assistant',content:acc});
-  }catch(err){body.innerHTML='<p>⚠️ Error de conexión. Intenta de nuevo.</p>';av.parentElement.classList.remove('speaking');}
+  }catch(err){answer.innerHTML='<p>⚠️ Error de conexión. Intenta de nuevo.</p>';av.parentElement.classList.remove('speaking');}
   finally{busy=false;sendBtn.disabled=false;input.focus();}
 });
 </script>
