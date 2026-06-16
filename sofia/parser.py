@@ -194,8 +194,21 @@ def parse_pdf(pdf_path: Path = PDF_PATH) -> list[dict]:
             after_header = block[num_match.end():]
             normative = _clean(_strip_editorial(after_header))
 
-            full_block_clean = _clean(block)
-            derogada = bool(re.search(r"\bDEROGAD[OA]\b", full_block_clean[:300], re.I))
+            # Fallback: si el stripping dejó casi vacío el artículo (texto que reanuda
+            # como prosa, sin numeral), recuperamos el bloque completo quitando sólo
+            # los insertos <...> y la 'Legislación Anterior' (texto derogado).
+            if len(normative) < 150:
+                fb = re.sub(r"<[^>]{0,6000}?>", " ", after_header, flags=re.S)
+                la = re.search(r"\n\s*Legislaci[oó]n Anterior\s*\n", fb, re.I)
+                if la:
+                    fb = fb[: la.start()]
+                fb = _clean(fb)
+                if len(fb) > len(normative) + 150:
+                    normative = fb
+
+            # Derogación: el aviso "<Artículo derogado...>" va dentro de <...>, por eso
+            # revisamos el bloque ORIGINAL (con los insertos) en su parte inicial.
+            derogada = bool(re.search(r"\bderogad[oa]s?\b", block[:260], re.I))
 
             epigrafe, texto = _split_epigrafe(normative)
 
