@@ -87,7 +87,7 @@ class RagEngine:
         n = np.linalg.norm(v)
         return v / n if n else v
 
-    def _full_text(self, numero: str, cap: int = 4500) -> str:
+    def _full_text(self, numero: str, cap: int = 8000) -> str:
         partes = self._parts_by_num.get(numero, [])
         txt = "\n".join(p["texto"] for p in partes) if partes else \
             self._by_num.get(numero, {}).get("texto", "")

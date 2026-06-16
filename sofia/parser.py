@@ -46,13 +46,48 @@ MARKER_RE = re.compile(
     re.M,
 )
 
-# Secciones editoriales que NO son texto normativo: cortamos el artículo ahí.
-EDITORIAL_RE = re.compile(
-    r"\n\s*(?:Notas de Vigencia|Notas de Validez|Notas del Editor|Concordancias|"
-    r"Jurisprudencia(?:\s+\w+)?|Doctrina(?:\s+\w+)?|Legislaci[oó]n Anterior|"
-    r"Disposiciones Analizadas)\s*\n",
+# Encabezados de bloques EDITORIALES (no normativos). Aparecen como línea propia.
+# Estos bloques se INTERCALAN dentro del artículo (no sólo al final), por lo que no
+# se puede "cortar" en el primero: hay que quitar cada bloque editorial y conservar
+# el texto normativo que reanuda después (numerales, parágrafos, literales).
+EDITORIAL_MARKER = re.compile(
+    r"^(?:Notas? de Vigencia|Notas? de Validez|Notas? del Editor|Notas? Generales|"
+    r"Concordancias?|Jurisprudencia(?:\s+\w+)*|Doctrina(?:\s+\w+)*|"
+    r"Legislaci[oó]n Anterior|Disposiciones [Aa]nalizadas)\s*$",
     re.I,
 )
+# Patrones de REANUDACIÓN del texto normativo tras un bloque editorial.
+# Numeral/literal de lista (número de 1-3 dígitos o letra + . o ) + espacio) o
+# encabezado de parágrafo/inciso. Evita falsos positivos como "51.286 de 2020".
+RESUME = re.compile(
+    r"^(?:\d{1,3}[\.\)]\s|[A-Za-z][\.\)]\s|PAR[ÁA]GRAFO|INCISO\b|NUMERAL\b|LITERAL\b)",
+    re.I,
+)
+
+
+def _strip_editorial(text: str) -> str:
+    """Quita los bloques editoriales conservando el texto normativo intercalado."""
+    text = re.sub(r"<[^>]{0,6000}?>", " ", text, flags=re.S)  # insertos del editor
+    out: list[str] = []
+    mode = "norm"
+    leg = False  # dentro de 'Legislación Anterior' (texto derogado: descartar todo)
+    for ln in text.split("\n"):
+        s = ln.strip()
+        if mode == "norm":
+            if EDITORIAL_MARKER.match(s):
+                mode = "edit"
+                leg = bool(re.match(r"Legislaci", s, re.I))
+                continue
+            out.append(ln)
+        else:  # 'edit' — saltando contenido editorial
+            if EDITORIAL_MARKER.match(s):
+                leg = bool(re.match(r"Legislaci", s, re.I))
+                continue
+            if not leg and RESUME.match(s):
+                mode = "norm"
+                out.append(ln)
+            # cualquier otra línea en modo edit se descarta
+    return "\n".join(out)
 
 LIBRO_ORD = {
     "PRIMERO": 1, "SEGUNDO": 2, "TERCERO": 3, "CUARTO": 4,
@@ -154,11 +189,10 @@ def parse_pdf(pdf_path: Path = PDF_PATH) -> list[dict]:
                 continue
             seen_numbers.add(numero)
 
-            # Texto normativo: desde el header hasta el primer marcador editorial.
+            # Texto normativo: quitar bloques editoriales intercalados conservando
+            # numerales, parágrafos y literales que reanudan después de cada bloque.
             after_header = block[num_match.end():]
-            cut = EDITORIAL_RE.search(after_header)
-            normative = after_header[: cut.start()] if cut else after_header
-            normative = _clean(normative)
+            normative = _clean(_strip_editorial(after_header))
 
             full_block_clean = _clean(block)
             derogada = bool(re.search(r"\bDEROGAD[OA]\b", full_block_clean[:300], re.I))

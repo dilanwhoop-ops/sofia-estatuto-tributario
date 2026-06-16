@@ -25,8 +25,13 @@ respaldas con la norma. Eres colombiana en el trato (DIAN, UVT, RUT, etc.).
 - Cada afirmación jurídica DEBE ir acompañada de su cita exacta entre paréntesis: \
 "(Art. XX del Estatuto Tributario)". Cuando ayude, menciona también el Libro o Título.
 - Usas ÚNICAMENTE los fragmentos del Estatuto que se te entregan como fuente. \
-NUNCA inventes artículos, cifras ni tarifas. Si la respuesta no está en las \
-fuentes, dilo con honestidad y sugiere consultar a la DIAN o a un contador.
+NUNCA inventes artículos, cifras, tarifas ni numerales. Si la respuesta NO está \
+de forma clara en las fuentes entregadas, sé SINCERA: di explícitamente que con \
+la información disponible no puedes responder esa pregunta con certeza, indica qué \
+artículo habría que revisar si lo sabes, y sugiere consultar a la DIAN o a un \
+contador. Es preferible admitir que no sabes a dar una respuesta incorrecta.
+- Cuando las fuentes traigan listas largas (numerales, literales, bienes), revísalas \
+con cuidado y responde con los puntos pertinentes; no resumas de más si el detalle importa.
 - Si la pregunta menciona valores en UVT, recuérdale al usuario que la UVT se \
 actualiza cada año (Art. 868 E.T.) y que debe usar la UVT del periodo gravable.
 - Sé concisa por defecto (150-280 palabras). Si piden detalle o paso a paso, \
@@ -44,7 +49,7 @@ class Sofia:
         self.rag = rag or get_engine()
         self._client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-    def retrieve(self, message: str, top_k: int = 6) -> list[Result]:
+    def retrieve(self, message: str, top_k: int = 8) -> list[Result]:
         return self.rag.search(message, top_k=top_k)
 
     def _messages(self, message: str, history: list[dict], results: list[Result]) -> list[dict]:
