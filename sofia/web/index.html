@@ -215,6 +215,25 @@
 
   @media(max-width:560px){.hero h2{font-size:1.7rem}.hero-av{width:120px;height:120px}.wrap{padding-bottom:8.5rem}}
 
+  /* ── Intro de bienvenida ── */
+  .intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg);
+    transition:opacity .6s ease,visibility .6s;text-align:center;padding:1rem}
+  .intro.hide{opacity:0;visibility:hidden}
+  .intro .iav{width:138px;height:138px;margin:0 auto;animation:introPop .9s cubic-bezier(.2,.8,.2,1)}
+  .intro h1{font-family:'Fraunces',serif;font-weight:700;font-size:2.7rem;margin:1.1rem 0 .35rem;letter-spacing:.5px;
+    background:var(--grad);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    opacity:0;animation:introUp .7s ease .35s forwards,shine 6s linear 1.1s infinite}
+  .intro p{color:var(--muted);font-size:.95rem;margin:0;opacity:0;animation:introUp .7s ease .55s forwards}
+  .intro .tri{width:118px;height:6px;border-radius:99px;margin:1.1rem auto 0;
+    background:linear-gradient(90deg,#fcd116 0 50%,#003893 50% 75%,#ce1126 75% 100%);
+    box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;animation:introUp .7s ease .75s forwards}
+  @keyframes introPop{0%{transform:scale(.4) rotate(-12deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes introUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  /* ── Acento tricolor Colombia ── */
+  .tricolor{width:92px;height:5px;border-radius:99px;margin:.2rem auto 0;
+    background:linear-gradient(90deg,#fcd116 0 50%,#003893 50% 75%,#ce1126 75% 100%);
+    box-shadow:0 3px 10px rgba(0,0,0,.1)}
+
   /* ── Tema OSCURO (neón premium) ── */
   [data-theme="dark"]{
     --bg:#0a0e20; --ink:#eaf0ff; --muted:#99a3cc; --line:#262e57; --accent-soft:#18224e;
@@ -244,6 +263,15 @@
 <body>
   <div class="bg"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span></div>
 
+  <div class="intro" id="intro">
+    <div>
+      <div class="iav" id="introAvatar"></div>
+      <h1>SOFIA</h1>
+      <p>Asistente del Estatuto Tributario de Colombia</p>
+      <div class="tri"></div>
+    </div>
+  </div>
+
   <header>
     <div class="h-av" id="headerAvatar"></div>
     <div class="brand">
@@ -263,14 +291,10 @@
         <div class="spark"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="hero-av" id="heroAvatar"></div>
         <h2>Hola, soy SOFIA</h2>
+        <div class="tricolor"></div>
         <p>Tu asistente del Estatuto Tributario de Colombia. Pregúntame sobre renta, IVA,
            retención en la fuente, sanciones o cualquier artículo. Te respondo citando la norma. ✨</p>
-        <div class="chips" id="chips">
-          <button class="chip c1" data-q="¿Cuál es la tarifa general del impuesto de renta para personas jurídicas?"><b>Renta</b> · Tarifa para personas jurídicas</button>
-          <button class="chip c2" data-q="¿Quiénes no están obligados a declarar renta?"><b>Declaración</b> · ¿Quién no debe declarar?</button>
-          <button class="chip c3" data-q="¿Qué es la UVT y para qué sirve?"><b>UVT</b> · Qué es y cómo se usa</button>
-          <button class="chip c4" data-q="¿Qué bienes están excluidos de IVA?"><b>IVA</b> · Bienes excluidos</button>
-        </div>
+        <div class="chips" id="chips"></div>
       </section>
     </div>
   </main>
@@ -295,53 +319,103 @@
 function avatarSVG(extraClass){
   return `<svg class="sofia-avatar idle ${extraClass||''}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset=".5" stop-color="#0ea5e9"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
-      <radialGradient id="skin" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#ffe7cf"/><stop offset="1" stop-color="#f4c89f"/></radialGradient>
-      <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b3b2e"/><stop offset="1" stop-color="#3a241b"/></linearGradient>
-      <linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0ea5e9"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+      <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#818cf8"/><stop offset="1" stop-color="#e879f9"/></linearGradient>
+      <radialGradient id="skin" cx=".42" cy=".32" r=".85"><stop offset="0" stop-color="#ffe9d6"/><stop offset=".7" stop-color="#fbd3ad"/><stop offset="1" stop-color="#efbb8c"/></radialGradient>
+      <linearGradient id="hair" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#7a5139"/><stop offset=".55" stop-color="#4a2f20"/><stop offset="1" stop-color="#2c1a12"/></linearGradient>
+      <linearGradient id="hairHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07a52"/><stop offset="1" stop-color="#b07a52" stop-opacity="0"/></linearGradient>
+      <linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#3b82f6"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+      <linearGradient id="lip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0758c"/><stop offset="1" stop-color="#cf3f5e"/></linearGradient>
+      <radialGradient id="iris" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="#7b5230"/><stop offset="1" stop-color="#3a241b"/></radialGradient>
     </defs>
-    <circle class="ring" cx="60" cy="60" r="55" fill="none" stroke="url(#rg)" stroke-width="4" stroke-linecap="round" stroke-dasharray="60 26" opacity=".9"/>
+    <circle class="ring" cx="60" cy="60" r="55" fill="none" stroke="url(#rg)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="64 24" opacity=".95"/>
     <circle cx="60" cy="60" r="48" fill="#ffffff"/>
-    <g class="charhead">
-      <!-- shoulders / blusa -->
-      <path d="M26 108c0-19 15-30 34-30s34 11 34 30z" fill="url(#top)"/>
-      <path d="M52 84h16v9a8 8 0 0 1-16 0z" fill="#f4c89f"/>
-      <!-- hair back -->
-      <path d="M30 64c0-22 13-37 30-37s30 15 30 37c0 9-3 16-6 20-1-12-2-25-5-28-6 5-32 5-38 0-3 3-4 16-5 28-3-4-6-11-6-20z" fill="url(#hair)"/>
-      <!-- face -->
-      <ellipse class="face" cx="60" cy="58" rx="22" ry="24" fill="url(#skin)"/>
-      <!-- cheeks -->
-      <ellipse cx="47" cy="64" rx="4.5" ry="3" fill="#ffb7a8" opacity=".55"/>
-      <ellipse cx="73" cy="64" rx="4.5" ry="3" fill="#ffb7a8" opacity=".55"/>
-      <!-- bangs -->
-      <path d="M38 50c2-15 12-23 22-23s20 8 22 23c-6-7-13-9-22-9s-16 2-22 9z" fill="url(#hair)"/>
-      <!-- eyebrows -->
-      <path d="M48 49q4-2 8 0" stroke="#5b3b2e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <path d="M64 49q4-2 8 0" stroke="#5b3b2e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <!-- eyes -->
+    <clipPath id="disc"><circle cx="60" cy="60" r="48"/></clipPath>
+    <g class="charhead" clip-path="url(#disc)">
+      <!-- blusa + cuello -->
+      <path d="M22 112c0-22 17-33 38-33s38 11 38 33z" fill="url(#top)"/>
+      <path d="M22 112c0-22 17-33 38-33 4 9 4 20 0 26-13 0-25 0-38 7z" fill="#ffffff" opacity=".12"/>
+      <path d="M50 96l10 9 10-9-3-9H53z" fill="#ffffff" opacity=".22"/>
+      <path d="M53 82h14v9a7 7 0 0 1-14 0z" fill="#f0bf90"/>
+      <!-- cabello atrás (largo) -->
+      <path d="M28 66c0-25 14-41 32-41s32 16 32 41c0 14-3 25-7 34-2-16-3-33-6-37-7 6-32 6-38 0-3 4-4 21-6 37-4-9-7-20-7-34z" fill="url(#hair)"/>
+      <path d="M33 58c2-16 11-28 22-30-9 7-13 22-13 38z" fill="url(#hairHi)" opacity=".7"/>
+      <!-- cara -->
+      <ellipse class="face" cx="60" cy="57" rx="21" ry="23" fill="url(#skin)"/>
+      <path d="M72 40c7 7 9 28 1 38 5-12 4-28-1-38z" fill="#d99b6a" opacity=".22"/>
+      <!-- orejas + aretes -->
+      <ellipse cx="39.5" cy="58" rx="3.5" ry="5" fill="url(#skin)"/><ellipse cx="80.5" cy="58" rx="3.5" ry="5" fill="url(#skin)"/>
+      <circle cx="39.5" cy="64" r="1.6" fill="#22d3ee"/><circle cx="80.5" cy="64" r="1.6" fill="#22d3ee"/>
+      <!-- rubor -->
+      <ellipse cx="47" cy="63" rx="4.6" ry="3" fill="#ff9d8f" opacity=".5"/>
+      <ellipse cx="73" cy="63" rx="4.6" ry="3" fill="#ff9d8f" opacity=".5"/>
+      <!-- cejas -->
+      <path d="M47 47.5q5-2.5 9 .2" stroke="#5b3b2e" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+      <path d="M64 47.7q4-2.7 9-.2" stroke="#5b3b2e" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+      <!-- ojos -->
       <g class="eyes">
-        <ellipse cx="52" cy="56" rx="3.2" ry="4" fill="#fff"/><circle cx="52.6" cy="56.6" r="2.2" fill="#3a241b"/><circle cx="53.4" cy="55.6" r=".7" fill="#fff"/>
-        <ellipse cx="68" cy="56" rx="3.2" ry="4" fill="#fff"/><circle cx="68.6" cy="56.6" r="2.2" fill="#3a241b"/><circle cx="69.4" cy="55.6" r=".7" fill="#fff"/>
+        <path d="M48 55q4-4 8 0q-4 3.5-8 0z" fill="#fff"/>
+        <circle cx="52" cy="55" r="2.7" fill="url(#iris)"/><circle cx="52" cy="55" r="1.3" fill="#241009"/><circle cx="53.1" cy="53.9" r=".8" fill="#fff"/>
+        <path d="M47.6 54q4-4.6 8.8-.2" stroke="#33231a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+        <path d="M64 55q4-4 8 0q-4 3.5-8 0z" fill="#fff"/>
+        <circle cx="68" cy="55" r="2.7" fill="url(#iris)"/><circle cx="68" cy="55" r="1.3" fill="#241009"/><circle cx="69.1" cy="53.9" r=".8" fill="#fff"/>
+        <path d="M63.6 54q4-4.6 8.8-.2" stroke="#33231a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
       </g>
-      <!-- nose -->
-      <path d="M60 59v4l-1.5 1.5" stroke="#e0a878" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-      <!-- mouth -->
-      <ellipse class="mouth" cx="60" cy="71" rx="5" ry="2.6" fill="#d6536a"/>
-      <path d="M55 70q5 3 10 0" stroke="#b23a52" stroke-width="1" fill="none" stroke-linecap="round" opacity=".5"/>
-      <!-- headset band + earcup + mic -->
-      <path d="M36 56a24 24 0 0 1 48 0" fill="none" stroke="#222b3a" stroke-width="3.4" stroke-linecap="round"/>
-      <rect x="32.5" y="54" width="8" height="13" rx="4" fill="#2a3344"/>
-      <rect x="79.5" y="54" width="8" height="13" rx="4" fill="#2a3344"/>
-      <path d="M36 65q-4 8 6 11" fill="none" stroke="#2a3344" stroke-width="2.6" stroke-linecap="round"/>
-      <circle cx="44" cy="77" r="2.6" fill="#10b981"/>
-      <!-- sound waves -->
-      <path class="wave w1" d="M48 73q5 4 0 8" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
-      <path class="wave w2" d="M51 71q8 6 0 12" fill="none" stroke="#0ea5e9" stroke-width="1.8" stroke-linecap="round"/>
+      <!-- nariz -->
+      <path d="M60 58.5v4.2l-1.8 1.6" stroke="#dca072" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <!-- boca -->
+      <path d="M53 69q7 1 14 0q-2 4-7 4t-7-4z" fill="#a82f48" opacity=".25"/>
+      <ellipse class="mouth" cx="60" cy="70.5" rx="5.2" ry="2.6" fill="url(#lip)"/>
+      <path d="M56 70q4 1.6 8 0" stroke="#fff" stroke-width="1" fill="none" stroke-linecap="round" opacity=".6"/>
+      <!-- flequillo + mechones frontales -->
+      <path d="M37 52c1-18 12-27 23-27s22 9 23 27c-5-9-10-13-15-9 3-4-2-7-8-7s-11 3-8 7c-5-4-10 0-15 9z" fill="url(#hair)"/>
+      <path d="M40 52c2-12 8-20 15-23-6 6-9 14-10 23z" fill="url(#hairHi)" opacity=".6"/>
+      <!-- diadema (headset) -->
+      <path d="M34 56a26 26 0 0 1 52 0" fill="none" stroke="#1f2738" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M34 56a26 26 0 0 1 52 0" fill="none" stroke="#3a455c" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+      <rect x="31.5" y="53" width="9" height="14" rx="4.5" fill="#27314a"/>
+      <rect x="79.5" y="53" width="9" height="14" rx="4.5" fill="#27314a"/>
+      <rect x="33.5" y="56" width="3" height="8" rx="1.5" fill="#3a455c"/>
+      <!-- micrófono -->
+      <path d="M36 66q-5 9 8 12" fill="none" stroke="#27314a" stroke-width="2.8" stroke-linecap="round"/>
+      <circle cx="45" cy="78" r="3" fill="#10b981"/><circle cx="45" cy="78" r="1.2" fill="#a7f3d0"/>
+      <!-- ondas de sonido -->
+      <path class="wave w1" d="M49 74q5 4 0 8" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+      <path class="wave w2" d="M52 72q8 6 0 12" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
     </g>
   </svg>`;
 }
 document.getElementById('heroAvatar').innerHTML = avatarSVG();
 document.getElementById('headerAvatar').innerHTML = avatarSVG();
+document.getElementById('introAvatar').innerHTML = avatarSVG();
+
+// ── Intro de bienvenida (se cierra sola) ──
+(function(){const intro=document.getElementById('intro');if(!intro)return;
+  const close=()=>intro.classList.add('hide');
+  setTimeout(close,2000); intro.addEventListener('click',close);
+  setTimeout(()=>{try{intro.remove();}catch(e){}},2900);
+})();
+
+// ── Sugerencias dinámicas (rotan en cada visita) ──
+const CHIP_POOL=[
+  {c:'c1',cat:'Renta',label:'Tarifa para personas jurídicas',q:'¿Cuál es la tarifa general del impuesto de renta para personas jurídicas?'},
+  {c:'c2',cat:'Declaración',label:'¿Quién no debe declarar?',q:'¿Quiénes no están obligados a declarar renta?'},
+  {c:'c3',cat:'UVT',label:'Qué es y cómo se usa',q:'¿Qué es la UVT y para qué sirve?'},
+  {c:'c4',cat:'IVA',label:'Bienes excluidos',q:'¿Qué bienes están excluidos de IVA?'},
+  {c:'c1',cat:'Retención',label:'¿Cuándo no se practica?',q:'¿En qué casos no se debe practicar retención en la fuente según el artículo 369?'},
+  {c:'c2',cat:'Sanciones',label:'Sanción por no declarar',q:'¿Cuál es la sanción por no declarar?'},
+  {c:'c3',cat:'IVA',label:'Exento vs excluido',q:'¿Cuál es la diferencia entre un bien exento y uno excluido en el IVA?'},
+  {c:'c4',cat:'Renta',label:'Renta presuntiva',q:'¿Cómo se calcula la renta presuntiva?'},
+  {c:'c1',cat:'Facturación',label:'Documentos POS',q:'¿Cuál es el límite para soportar costos con documentos POS según el artículo 616-1?'},
+  {c:'c2',cat:'4x1000',label:'Movimientos financieros',q:'¿Qué es el gravamen a los movimientos financieros (4x1000)?'},
+  {c:'c3',cat:'Simple',label:'Quiénes pueden optar',q:'¿Quiénes pueden pertenecer al régimen simple de tributación?'},
+  {c:'c4',cat:'Descuentos',label:'ICA como descuento',q:'¿Qué porcentaje del ICA puede tomarse como descuento en renta?'},
+];
+function renderChips(){
+  const sel=[...CHIP_POOL].sort(()=>Math.random()-.5).slice(0,4);
+  document.getElementById('chips').innerHTML=sel.map(x=>
+    `<button class="chip ${x.c}" data-q="${x.q.replace(/"/g,'&quot;')}"><b>${x.cat}</b> · ${x.label}</button>`).join('');
+}
+renderChips();
 
 const thread=document.getElementById('thread'),main=document.getElementById('main'),hero=document.getElementById('hero');
 const form=document.getElementById('form'),input=document.getElementById('input'),sendBtn=document.getElementById('send');
