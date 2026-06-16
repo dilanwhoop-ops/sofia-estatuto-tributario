@@ -1,0 +1,15 @@
+# Blueprint de Render.com — SOFIA (Estatuto Tributario de Colombia)
+# Render → New → Blueprint → selecciona este repo. Solo pega tu OPENAI_API_KEY.
+services:
+  - type: web
+    name: sofia-estatuto-tributario
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false          # se ingresa manualmente como secreto
+      - key: SOFIA_CHAT_MODEL
+        value: gpt-4o

@@ -1,0 +1,9 @@
+# SOFIA · RAG tributario Colombia — dependencias
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+openai>=1.55.0
+numpy>=1.26.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+# Sólo necesario para re-generar el índice desde el PDF (no en runtime):
+pymupdf>=1.24.0
