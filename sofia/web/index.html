@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>try{var t=localStorage.getItem('sofia-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <title>SOFIA · Estatuto Tributario de Colombia</title>
 <meta name="description" content="SOFIA, asistente con IA del Estatuto Tributario de Colombia. Resuelve tus dudas de renta, IVA, retención y más, con citas a la norma." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -64,10 +65,11 @@
   .brand .co{background:var(--grad-warm);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:700}
   header .badge{margin-left:.55rem;display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:#0f766e;
     font-weight:600;border:1px solid #b9efe0;background:#ecfdf5;padding:.3rem .7rem;border-radius:99px}
-  .voice-toggle{margin-left:auto;width:40px;height:40px;border-radius:13px;border:1px solid var(--line);
+  .theme-toggle,.voice-toggle{width:40px;height:40px;border-radius:13px;border:1px solid var(--line);
     background:#fff;cursor:pointer;display:grid;place-items:center;color:var(--muted);transition:.18s}
+  .theme-toggle{margin-left:auto}
   .voice-toggle.on{background:var(--accent-soft);border-color:#9be7d4;color:var(--teal)}
-  .voice-toggle:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .theme-toggle:hover,.voice-toggle:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
   .controls{margin-top:.7rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
   .speak-btn{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;font-weight:600;border:1px solid var(--line);
     background:#fff;color:var(--teal);padding:.34rem .75rem;border-radius:99px;cursor:pointer;transition:.15s}
@@ -212,6 +214,31 @@
   @keyframes tilt{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
 
   @media(max-width:560px){.hero h2{font-size:1.7rem}.hero-av{width:120px;height:120px}.wrap{padding-bottom:8.5rem}}
+
+  /* ── Tema OSCURO (neón premium) ── */
+  [data-theme="dark"]{
+    --bg:#0a0e20; --ink:#eaf0ff; --muted:#99a3cc; --line:#262e57; --accent-soft:#18224e;
+    --glass:rgba(16,20,46,.6);
+    --shadow:0 2px 8px rgba(0,0,0,.5),0 20px 52px rgba(0,0,0,.55);
+    --shadow-lg:0 30px 80px rgba(0,0,0,.72);
+  }
+  [data-theme="dark"] .bg{background:
+    radial-gradient(1200px 700px at 78% -15%,#0c2a48,transparent),
+    radial-gradient(1000px 600px at 3% 115%,#221150,transparent),
+    radial-gradient(900px 620px at 98% 108%,#3a0f3e,transparent),var(--bg)}
+  [data-theme="dark"] .blob{mix-blend-mode:screen;opacity:.42;filter:blur(82px)}
+  [data-theme="dark"] .bg::after{opacity:.34}
+  [data-theme="dark"] .chip,[data-theme="dark"] .theme-toggle,[data-theme="dark"] .voice-toggle,
+  [data-theme="dark"] .speak-btn,[data-theme="dark"] .mic{background:#131a3c;color:var(--ink);border-color:var(--line)}
+  [data-theme="dark"] .speak-btn,[data-theme="dark"] .mic{color:#5eead4}
+  [data-theme="dark"] .voice-toggle.on{background:#10243f;border-color:#1f5a6a;color:#5eead4}
+  [data-theme="dark"] .msg.sofia .body{background:rgba(20,26,58,.72);border-color:rgba(255,255,255,.06)}
+  [data-theme="dark"] .body strong{color:#67e8f9}
+  [data-theme="dark"] header .badge{background:#0e2a22;border-color:#1f5a44;color:#5eead4}
+  [data-theme="dark"] .modal,[data-theme="dark"] .modal-h{background:#0f1432}
+  [data-theme="dark"] .modal-x{background:#1b2150;color:var(--muted)}
+  [data-theme="dark"] .modal-b .derog{background:#3a1620;color:#fda4af}
+  [data-theme="dark"] main::-webkit-scrollbar-thumb{background:#2a3160;border-color:var(--bg)}
 </style>
 </head>
 <body>
@@ -223,6 +250,7 @@
       <h1>SOFIA</h1>
       <p>Estatuto Tributario de <span class="co">Colombia</span></p>
     </div>
+    <button class="theme-toggle" id="themeToggle" title="Cambiar tema claro/oscuro" aria-label="Tema"></button>
     <button class="voice-toggle on" id="voiceToggle" title="Leer las respuestas en voz alta (gratis)" aria-label="Voz automática">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.06a7 7 0 0 1 0 13.48v2.06A9 9 0 0 0 14 3.2z"/></svg>
     </button>
@@ -364,11 +392,29 @@ function addControls(body,answer,av){
   const btn=document.createElement('button');btn.className='speak-btn';btn.type='button';
   btn.innerHTML='<span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg></span><span class="eq"><i></i><i></i><i></i><i></i></span><span class="lbl">Escuchar</span>';
   btn.onclick=()=>{if(_curBtn===btn)ttsStop();else ttsSpeak(answer.innerText.trim(),btn,av);};
-  row.appendChild(btn);body.appendChild(row);
+  row.appendChild(btn);
+  const copy=document.createElement('button');copy.className='speak-btn';copy.type='button';
+  copy.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg><span class="lbl">Copiar</span>';
+  copy.onclick=()=>{navigator.clipboard.writeText(answer.innerText.trim()).then(()=>{const l=copy.querySelector('.lbl');l.textContent='¡Copiado!';setTimeout(()=>{l.textContent='Copiar';},1400);}).catch(()=>{});};
+  row.appendChild(copy);
+  body.appendChild(row);
   if(autoRead)ttsSpeak(answer.innerText.trim(),btn,av);
 }
 const voiceToggle=document.getElementById('voiceToggle');
 voiceToggle.onclick=()=>{autoRead=!autoRead;voiceToggle.classList.toggle('on',autoRead);if(!autoRead)ttsStop();};
+
+// ── Tema claro / oscuro ──
+const themeToggle=document.getElementById('themeToggle');
+const moonSVG='<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+const sunSVG='<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>';
+function applyThemeIcon(){themeToggle.innerHTML=document.documentElement.getAttribute('data-theme')==='dark'?sunSVG:moonSVG;}
+applyThemeIcon();
+themeToggle.onclick=()=>{
+  const next=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  try{localStorage.setItem('sofia-theme',next);}catch(e){}
+  applyThemeIcon();
+};
 
 // ── Micrófono: hablarle a SOFIA (Web Speech API — gratis e ilimitado) ──
 const micBtn=document.getElementById('mic');
