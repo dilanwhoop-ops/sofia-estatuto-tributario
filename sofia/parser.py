@@ -46,48 +46,54 @@ MARKER_RE = re.compile(
     re.M,
 )
 
-# Encabezados de bloques EDITORIALES (no normativos). Aparecen como línea propia.
-# Estos bloques se INTERCALAN dentro del artículo (no sólo al final), por lo que no
-# se puede "cortar" en el primero: hay que quitar cada bloque editorial y conservar
-# el texto normativo que reanuda después (numerales, parágrafos, literales).
-EDITORIAL_MARKER = re.compile(
+# Bloques EDITORIALES de RUIDO (jurisprudencia, concordancias, notas): se descartan.
+EDITORIAL_DISCARD = re.compile(
     r"^(?:Notas? de Vigencia|Notas? de Validez|Notas? del Editor|Notas? Generales|"
     r"Concordancias?|Jurisprudencia(?:\s+\w+)*|Doctrina(?:\s+\w+)*|"
-    r"Legislaci[oó]n Anterior|Disposiciones [Aa]nalizadas)\s*$",
+    r"Disposiciones [Aa]nalizadas)\s*$",
     re.I,
 )
-# Patrones de REANUDACIÓN del texto normativo tras un bloque editorial.
-# Numeral/literal de lista (número de 1-3 dígitos o letra + . o ) + espacio) o
-# encabezado de parágrafo/inciso. Evita falsos positivos como "51.286 de 2020".
-RESUME = re.compile(
-    r"^(?:\d{1,3}[\.\)]\s|[A-Za-z][\.\)]\s|PAR[ÁA]GRAFO|INCISO\b|NUMERAL\b|LITERAL\b)",
-    re.I,
-)
+# "Legislación Anterior": versiones PREVIAS del artículo. No son ruido: se guardan
+# aparte como histórico (para explicar qué cambió/se eliminó en una reforma).
+LEG_ANTERIOR = re.compile(r"^Legislaci[oó]n Anterior\s*$", re.I)
+# Reanudación de texto normativo tras un bloque de ruido. ESTRICTO para no “colar”
+# citas de sentencias (evita 'inciso 2º; 27;...' o '51.286 de 2020').
+RESUME = re.compile(r"^(?:\d{1,3}[\.\)]\s|[a-z][\.\)]\s|PAR[ÁA]GRAFO)", re.I)
 
 
-def _strip_editorial(text: str) -> str:
-    """Quita los bloques editoriales conservando el texto normativo intercalado."""
-    text = re.sub(r"<[^>]{0,6000}?>", " ", text, flags=re.S)  # insertos del editor
-    out: list[str] = []
-    mode = "norm"
-    leg = False  # dentro de 'Legislación Anterior' (texto derogado: descartar todo)
-    for ln in text.split("\n"):
+def _extract_texts(after_header: str) -> tuple[str, list[str]]:
+    """Separa (texto_vigente, [versiones_anteriores]) de un bloque de artículo.
+
+    - texto_vigente: norma actual, quitando jurisprudencia/concordancias/notas.
+    - versiones_anteriores: cada bloque bajo 'Legislación Anterior' por separado
+      (un artículo puede tener varias versiones previas).
+    """
+    after_header = re.sub(r"<[^>]{0,6000}?>", " ", after_header, flags=re.S)
+    cur: list[str] = []
+    ant_segs: list[list[str]] = []
+    cur_seg: list[str] | None = None
+    mode = "cur"  # cur | ant | dis
+    for ln in after_header.split("\n"):
         s = ln.strip()
-        if mode == "norm":
-            if EDITORIAL_MARKER.match(s):
-                mode = "edit"
-                leg = bool(re.match(r"Legislaci", s, re.I))
-                continue
-            out.append(ln)
-        else:  # 'edit' — saltando contenido editorial
-            if EDITORIAL_MARKER.match(s):
-                leg = bool(re.match(r"Legislaci", s, re.I))
-                continue
-            if not leg and RESUME.match(s):
-                mode = "norm"
-                out.append(ln)
-            # cualquier otra línea en modo edit se descarta
-    return "\n".join(out)
+        if LEG_ANTERIOR.match(s):
+            mode = "ant"
+            cur_seg = []
+            ant_segs.append(cur_seg)
+            continue
+        if EDITORIAL_DISCARD.match(s):
+            mode = "dis"
+            continue
+        if mode == "cur":
+            cur.append(ln)
+        elif mode == "ant":
+            cur_seg.append(ln)  # type: ignore[union-attr]
+        else:  # dis (ruido): sólo reanuda con señal normativa fuerte
+            if RESUME.match(s):
+                mode = "cur"
+                cur.append(ln)
+    segs = [_clean("\n".join(seg)) for seg in ant_segs]
+    segs = [s for s in segs if len(s) > 40]
+    return "\n".join(cur), segs
 
 LIBRO_ORD = {
     "PRIMERO": 1, "SEGUNDO": 2, "TERCERO": 3, "CUARTO": 4,
@@ -189,14 +195,33 @@ def parse_pdf(pdf_path: Path = PDF_PATH) -> list[dict]:
                 continue
             seen_numbers.add(numero)
 
-            # Texto normativo: quitar bloques editoriales intercalados conservando
-            # numerales, parágrafos y literales que reanudan después de cada bloque.
-            after_header = block[num_match.end():]
-            normative = _clean(_strip_editorial(after_header))
+            # Extender el bloque para ABSORBER los re-enunciados del mismo artículo
+            # ("ARTÍCULO 115." dentro de 'Legislación Anterior'), que de otro modo
+            # cortarían el bloque y perderíamos versiones previas (p. ej. el descuento
+            # de ICA del Art. 115 antes de la Ley 2277 de 2022).
+            end2 = len(text)
+            for j in range(idx + 1, len(markers)):
+                mj = markers[j]
+                if mj.group("articulo"):
+                    nmj = ARTICULO_RE.match(text[mj.start():mj.start() + 40])
+                    if nmj and nmj.group(1) == numero:
+                        continue  # mismo artículo re-enunciado: absorber
+                    end2 = mj.start()
+                    break
+                end2 = mj.start()
+                break
+            block = text[start:end2]
 
-            # Fallback: si el stripping dejó casi vacío el artículo (texto que reanuda
-            # como prosa, sin numeral), recuperamos el bloque completo quitando sólo
-            # los insertos <...> y la 'Legislación Anterior' (texto derogado).
+            # Separar norma vigente y versiones anteriores (histórico referencial).
+            after_header = block[num_match.end():]
+            current_raw, anterior_segs = _extract_texts(after_header)
+            normative = _clean(current_raw)
+            # Conservar TODAS las versiones previas (unidas), con tope, para poder
+            # explicar qué cambió en una reforma.
+            anterior = "\n— — —\n".join(anterior_segs)
+
+            # Fallback: si la norma vigente quedó casi vacía (texto que reanuda como
+            # prosa), recuperamos el bloque completo (sin <...> ni Legislación Anterior).
             if len(normative) < 150:
                 fb = re.sub(r"<[^>]{0,6000}?>", " ", after_header, flags=re.S)
                 la = re.search(r"\n\s*Legislaci[oó]n Anterior\s*\n", fb, re.I)
@@ -217,6 +242,7 @@ def parse_pdf(pdf_path: Path = PDF_PATH) -> list[dict]:
                 "numero": numero,
                 "epigrafe": epigrafe,
                 "texto": texto,
+                "texto_anterior": anterior[:3800],
                 "libro": cur_libro,
                 "libro_n": cur_libro_n,
                 "titulo": cur_titulo,

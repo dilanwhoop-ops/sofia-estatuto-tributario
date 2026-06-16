@@ -51,30 +51,37 @@ def build_chunks(articles: list[dict]) -> list[dict]:
     for a in articles:
         if a.get("derogada"):
             continue  # el índice de recuperación sólo contiene norma vigente
-        texto = a["texto"].strip()
-        if len(texto) < 25:
-            continue
-        ref = f"Art. {a['numero']} E.T."
-        partes = _split_text(texto)
-        for i, parte in enumerate(partes):
-            # Texto que se incrusta (embedding): contexto jerárquico + contenido
-            ctx = f"{ref} — {a['epigrafe']}".strip(" —")
-            embed_text = f"{ctx}\n[{a['libro']} · {a['titulo']}]\n{parte}"
-            chunks.append({
-                "chunk_uid": f"art_{a['numero']}_{i}",
-                "numero": a["numero"],
-                "ref": ref,
-                "epigrafe": a["epigrafe"],
-                "libro": a["libro"],
-                "titulo": a["titulo"],
-                "capitulo": a["capitulo"],
-                "hierarchy_path": a["hierarchy_path"],
-                "pagina": a["pagina"],
-                "parte": i,
-                "n_partes": len(partes),
-                "texto": parte,
-                "embed_text": embed_text,
-            })
+
+        def _emit(texto: str, anterior: bool) -> None:
+            texto = (texto or "").strip()
+            if len(texto) < 25:
+                return
+            ref = f"Art. {a['numero']} E.T." + (" (versión anterior)" if anterior else "")
+            partes = _split_text(texto)
+            for i, parte in enumerate(partes):
+                ctx = f"{ref} — {a['epigrafe']}".strip(" —")
+                tag = ("[VERSIÓN ANTERIOR, modificada/derogada por reforma posterior] "
+                       if anterior else "")
+                embed_text = f"{ctx}\n[{a['libro']} · {a['titulo']}]\n{tag}{parte}"
+                chunks.append({
+                    "chunk_uid": f"art_{a['numero']}{'_ant' if anterior else ''}_{i}",
+                    "numero": a["numero"],
+                    "anterior": anterior,
+                    "ref": ref,
+                    "epigrafe": a["epigrafe"],
+                    "libro": a["libro"],
+                    "titulo": a["titulo"],
+                    "capitulo": a["capitulo"],
+                    "hierarchy_path": a["hierarchy_path"],
+                    "pagina": a["pagina"],
+                    "parte": i,
+                    "n_partes": len(partes),
+                    "texto": parte,
+                    "embed_text": embed_text,
+                })
+
+        _emit(a["texto"], anterior=False)
+        _emit(a.get("texto_anterior", ""), anterior=True)
     return chunks
 
 

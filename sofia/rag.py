@@ -64,6 +64,7 @@ class Result:
     titulo: str
     texto: str
     score: float
+    anterior: bool = False
 
 
 class RagEngine:
@@ -72,11 +73,12 @@ class RagEngine:
         self.embeddings: np.ndarray = np.load(settings.EMBEDDINGS_NPY)
         self.articles: list[dict] = json.loads(settings.ESTATUTO_JSON.read_text(encoding="utf-8"))
         self._by_num: dict[str, dict] = {a["numero"]: a for a in self.articles}
-        # partes de cada artículo (para reconstruir el texto completo)
-        self._parts_by_num: dict[str, list[dict]] = {}
+        # partes por "unidad" = (numero, anterior); vigente y versión previa separadas
+        self._parts_by_unit: dict[tuple[str, bool], list[dict]] = {}
         for c in self.chunks:
-            self._parts_by_num.setdefault(c["numero"], []).append(c)
-        for v in self._parts_by_num.values():
+            key = (c["numero"], bool(c.get("anterior")))
+            self._parts_by_unit.setdefault(key, []).append(c)
+        for v in self._parts_by_unit.values():
             v.sort(key=lambda c: c["parte"])
         self._client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -87,10 +89,9 @@ class RagEngine:
         n = np.linalg.norm(v)
         return v / n if n else v
 
-    def _full_text(self, numero: str, cap: int = 8000) -> str:
-        partes = self._parts_by_num.get(numero, [])
-        txt = "\n".join(p["texto"] for p in partes) if partes else \
-            self._by_num.get(numero, {}).get("texto", "")
+    def _full_text(self, numero: str, anterior: bool, cap: int = 8000) -> str:
+        partes = self._parts_by_unit.get((numero, anterior), [])
+        txt = "\n".join(p["texto"] for p in partes)
         return txt[:cap]
 
     def _expand_query(self, query: str) -> str:
@@ -107,33 +108,36 @@ class RagEngine:
         qvec = self._embed(expanded)
         sims = self.embeddings @ qvec  # cosine (todo normalizado)
 
-        # mejor score por artículo
-        best: dict[str, float] = {}
+        # mejor score por UNIDAD (numero, anterior)
+        best: dict[tuple[str, bool], float] = {}
         for idx, c in enumerate(self.chunks):
             s = float(sims[idx])
-            num = c["numero"]
-            if s > best.get(num, -1.0):
-                best[num] = s
+            key = (c["numero"], bool(c.get("anterior")))
+            if s > best.get(key, -1.0):
+                best[key] = s
 
-        # boost por número de artículo citado explícitamente
+        # boost por número de artículo citado explícitamente (sóle versión vigente)
         cited = {m.group(1) for m in ART_RE.finditer(query)}
         for num in cited:
             if num in self._by_num:
-                best[num] = max(best.get(num, 0.0), 0.0) + 0.5  # garantiza top
+                k = (num, False)
+                best[k] = max(best.get(k, 0.0), 0.0) + 0.5
 
         ranked = sorted(best.items(), key=lambda kv: kv[1], reverse=True)[:top_k]
 
         results: list[Result] = []
-        for num, score in ranked:
+        for (num, anterior), score in ranked:
             a = self._by_num.get(num, {})
+            ref = f"Art. {num} E.T." + (" (versión anterior)" if anterior else "")
             results.append(Result(
                 numero=num,
-                ref=f"Art. {num} E.T.",
+                ref=ref,
                 epigrafe=a.get("epigrafe", ""),
                 libro=a.get("libro", ""),
                 titulo=a.get("titulo", ""),
-                texto=self._full_text(num),
+                texto=self._full_text(num, anterior),
                 score=round(score, 3),
+                anterior=anterior,
             ))
         return results
 
@@ -144,6 +148,8 @@ class RagEngine:
         for i, r in enumerate(results, 1):
             head = f"[{i}] {r.ref} — {r.epigrafe}".rstrip(" —")
             loc = " · ".join(p for p in [r.libro, r.titulo] if p)
+            if r.anterior:
+                head += "  ⚠️ TEXTO NO VIGENTE (versión previa a una reforma; útil sólo para explicar qué cambió)"
             out.append(f"\n{head}\n({loc})\n{r.texto}")
         return "\n".join(out)
 
