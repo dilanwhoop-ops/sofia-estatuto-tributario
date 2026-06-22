@@ -234,6 +234,34 @@
     background:linear-gradient(90deg,#fcd116 0 50%,#003893 50% 75%,#ce1126 75% 100%);
     box-shadow:0 3px 10px rgba(0,0,0,.1)}
 
+  /* ── #2 Resaltado en respuestas ── */
+  .art-link{color:#4f46e5;font-weight:600;background:#eef2ff;border:1px solid #e0e7ff;border-radius:6px;padding:0 .28rem;cursor:pointer;white-space:nowrap;transition:.12s}
+  .art-link:hover{background:#e0e7ff}
+  .fig{font-weight:700;color:#0e7490;background:#ecfeff;border-radius:5px;padding:0 .22rem}
+  /* ── #3 Cara pensando ── */
+  .thinking .sofia-avatar{animation:ponder 1.8s ease-in-out infinite}
+  @keyframes ponder{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+  /* ── #5 Tarjetas de categoría (chips con ícono) ── */
+  .chip{display:flex;align-items:center;gap:.6rem}
+  .chip .ic{font-size:1.4rem;line-height:1;flex:none}
+  .chip .ct b{display:block;font-size:.92rem}.chip .ct span{font-size:.78rem;color:var(--muted);font-weight:500}
+  /* ── #1 Modo voz a pantalla completa ── */
+  .vmode-btn{width:40px;height:40px;border-radius:13px;border:1px solid var(--line);background:#fff;cursor:pointer;display:grid;place-items:center;color:var(--teal);transition:.18s}
+  .vmode-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .vmode{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 28%,#13204a,#070b1e 70%);display:none;flex-direction:column;align-items:center;justify-content:center;color:#eaf0ff;text-align:center;padding:1.5rem}
+  .vmode.on{display:flex;animation:fade .3s ease}
+  .vmode .vhalo{position:relative}
+  .vmode .vhalo::before{content:"";position:absolute;inset:-14%;border-radius:50%;background:conic-gradient(from 0deg,#22d3ee,#818cf8,#e879f9,#34d399,#22d3ee);filter:blur(28px);opacity:.55;animation:spinbg 8s linear infinite}
+  .vmode .vav{width:210px;height:210px;position:relative}
+  .vmode .vstatus{font-size:1.15rem;margin:1.4rem 0 .2rem;font-weight:700}
+  .vmode .vans{max-width:580px;color:#c7cdf0;font-size:.95rem;line-height:1.55;max-height:28vh;overflow:auto;margin:.5rem 0 1.6rem;padding:0 .5rem}
+  .vmode .vmic{width:78px;height:78px;border-radius:50%;border:0;cursor:pointer;background:linear-gradient(135deg,#22d3ee,#6366f1);color:#fff;display:grid;place-items:center;box-shadow:0 14px 34px rgba(99,102,241,.5);transition:transform .15s}
+  .vmode .vmic:hover{transform:scale(1.06)}
+  .vmode .vmic.live{background:linear-gradient(135deg,#fb7185,#ef4444);animation:micpulse 1.2s infinite}
+  .vmode .vmic:disabled{opacity:.5}
+  .vmode .vclose{position:absolute;top:1.2rem;right:1.2rem;border:0;background:rgba(255,255,255,.1);color:#fff;width:44px;height:44px;border-radius:50%;font-size:1.4rem;cursor:pointer}
+  .vmode .vhint{font-size:.82rem;color:#8b93c0;margin-top:.9rem}
+
   /* ── Tema OSCURO (neón premium) ── */
   [data-theme="dark"]{
     --bg:#0a0e20; --ink:#eaf0ff; --muted:#99a3cc; --line:#262e57; --accent-soft:#18224e;
@@ -282,8 +310,22 @@
     <button class="voice-toggle on" id="voiceToggle" title="Leer las respuestas en voz alta (gratis)" aria-label="Voz automática">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.06a7 7 0 0 1 0 13.48v2.06A9 9 0 0 0 14 3.2z"/></svg>
     </button>
+    <button class="vmode-btn" id="vmodeBtn" title="Hablar con SOFIA (modo voz)" aria-label="Modo voz">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.9 15.9 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"/></svg>
+    </button>
     <span class="badge"><span class="dot"></span>En línea · IA</span>
   </header>
+
+  <div class="vmode" id="vmode">
+    <button class="vclose" id="vclose" aria-label="Cerrar">×</button>
+    <div class="vhalo"><div class="vav" id="vmodeAvatar"></div></div>
+    <div class="vstatus" id="vstatus">Toca el micrófono y háblame</div>
+    <div class="vans" id="vans"></div>
+    <button class="vmic" id="vmic" aria-label="Hablar">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+    </button>
+    <div class="vhint" id="vhint">Conversación por voz · gratis e ilimitado</div>
+  </div>
 
   <main id="main">
     <div class="wrap" id="thread">
@@ -356,37 +398,39 @@ function avatarSVG(extraClass){
       <!-- rubor (subsuperficie) -->
       <ellipse cx="46.5" cy="62" rx="5.6" ry="3.7" fill="url(#cheek)"/>
       <ellipse cx="73.5" cy="62" rx="5.6" ry="3.7" fill="url(#cheek)"/>
-      <!-- cejas (rellenas) -->
-      <path d="M45 46.5q6-3.5 11-.5q-1 1.8-2.2 1.3q-4-2-7.8-.2z" fill="#4a2f1d"/>
-      <path d="M64 47q5-3 11 .5q-3.8 1.6-7.8-.2q-1.2-.5-2.2.3z" fill="#4a2f1d"/>
-      <!-- ojos (vidriosos, con brillo) -->
+      <!-- sombra de ojos (maquillaje suave) -->
+      <path d="M46 53.6q6-3.8 12 0q-1.3-3-6-3t-6 3z" fill="#c79ad0" opacity=".22"/>
+      <path d="M62 53.6q6-3.8 12 0q-1.3-3-6-3t-6 3z" fill="#c79ad0" opacity=".22"/>
+      <!-- cejas (finas y arqueadas) -->
+      <path d="M45.8 48q5.2-3.6 10.6-1.1" stroke="#5a3a24" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M63.6 46.9q5.4-2.5 10.6 1.1" stroke="#5a3a24" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <!-- ojos (grandes, vidriosos, con pestañas) -->
       <g class="eyes">
-        <path d="M46.4 55.6q5.6-5.2 11.2 0q-5.6 4.6-11.2 0z" fill="#ffffff"/>
-        <path d="M46.4 55.6q5.6-5.2 11.2 0q-3-1.6-11.2 0z" fill="#cdbfae" opacity=".5"/>
-        <circle cx="52" cy="55.8" r="3" fill="url(#iris)"/>
-        <circle cx="52" cy="55.8" r="3" fill="none" stroke="#2a1809" stroke-width=".6" opacity=".5"/>
-        <circle cx="52" cy="55.8" r="1.5" fill="#1c0e05"/>
-        <circle cx="50.8" cy="54.5" r="1.05" fill="#ffffff"/><circle cx="53.1" cy="56.8" r=".5" fill="#ffffff" opacity=".8"/>
-        <path d="M45.9 54.6q5.9-5.4 11.8 0" stroke="#2b1c12" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-        <path d="M45.9 54.6l-1.6-1.1M57.7 54.6l1.7-1.3" stroke="#2b1c12" stroke-width="1.1" stroke-linecap="round"/>
-        <path d="M62.4 55.6q5.6-5.2 11.2 0q-5.6 4.6-11.2 0z" fill="#ffffff"/>
-        <path d="M62.4 55.6q5.6-5.2 11.2 0q-3-1.6-11.2 0z" fill="#cdbfae" opacity=".5"/>
-        <circle cx="68" cy="55.8" r="3" fill="url(#iris)"/>
-        <circle cx="68" cy="55.8" r="3" fill="none" stroke="#2a1809" stroke-width=".6" opacity=".5"/>
-        <circle cx="68" cy="55.8" r="1.5" fill="#1c0e05"/>
-        <circle cx="66.8" cy="54.5" r="1.05" fill="#ffffff"/><circle cx="69.1" cy="56.8" r=".5" fill="#ffffff" opacity=".8"/>
-        <path d="M62.3 54.6q5.9-5.4 11.8 0" stroke="#2b1c12" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-        <path d="M62.3 54.6l-1.6-1.1M74.1 54.6l1.7-1.3" stroke="#2b1c12" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M46 55.9q6-5.6 12 0q-6 5-12 0z" fill="#ffffff"/>
+        <path d="M46 55.9q6-5.6 12 0q-3.2-1.9-12 0z" fill="#c9bba8" opacity=".5"/>
+        <circle cx="52" cy="56.1" r="3.2" fill="url(#iris)"/>
+        <circle cx="52" cy="56.1" r="3.2" fill="none" stroke="#2a1809" stroke-width=".6" opacity=".5"/>
+        <circle cx="52" cy="56.1" r="1.6" fill="#1c0e05"/>
+        <circle cx="50.7" cy="54.7" r="1.2" fill="#ffffff"/><circle cx="53.2" cy="57.1" r=".55" fill="#ffffff" opacity=".85"/>
+        <path d="M45.6 54.8q6.2-5.9 12.4 0" stroke="#241712" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M45.7 54.8l-2.1-1.4M46.2 56l-2.3-.7M47 57l-2.1.1" stroke="#241712" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M62 55.9q6-5.6 12 0q-6 5-12 0z" fill="#ffffff"/>
+        <path d="M62 55.9q6-5.6 12 0q-3.2-1.9-12 0z" fill="#c9bba8" opacity=".5"/>
+        <circle cx="68" cy="56.1" r="3.2" fill="url(#iris)"/>
+        <circle cx="68" cy="56.1" r="3.2" fill="none" stroke="#2a1809" stroke-width=".6" opacity=".5"/>
+        <circle cx="68" cy="56.1" r="1.6" fill="#1c0e05"/>
+        <circle cx="66.7" cy="54.7" r="1.2" fill="#ffffff"/><circle cx="69.2" cy="57.1" r=".55" fill="#ffffff" opacity=".85"/>
+        <path d="M61.6 54.8q6.2-5.9 12.4 0" stroke="#241712" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M74.3 54.8l2.1-1.4M73.8 56l2.3-.7M73 57l2.1.1" stroke="#241712" stroke-width="1.1" stroke-linecap="round" fill="none"/>
       </g>
-      <!-- nariz (sombra + luz) -->
-      <path d="M60 57v5.4q-2 1.5-3.6 .4" stroke="#d99a6a" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".7"/>
-      <path d="M60 58v4" stroke="#ffffff" stroke-width="1" opacity=".22" stroke-linecap="round"/>
-      <ellipse cx="58" cy="64" rx=".7" ry=".5" fill="#b9784e" opacity=".4"/><ellipse cx="62" cy="64" rx=".7" ry=".5" fill="#b9784e" opacity=".4"/>
-      <!-- boca (labios brillantes) -->
-      <path d="M59 66v2.6M61 66v2.6" stroke="#cf8a5e" stroke-width=".6" opacity=".3"/>
-      <path class="mouth" d="M52.5 69.4q7.5-3 15 0q-3.5 5.6-7.5 5.6t-7.5-5.6z" fill="url(#lip)"/>
-      <path d="M52.5 69.4q7.5-2.4 15 0" stroke="#a83a52" stroke-width=".8" fill="none" opacity=".5"/>
-      <ellipse cx="60" cy="73" rx="3" ry="1" fill="#ffffff" opacity=".4"/>
+      <!-- nariz (sutil) -->
+      <path d="M60 57.5v5q-1.6 1.3-3 .4" stroke="#d99a6a" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".6"/>
+      <path d="M60 58.5v3.4" stroke="#ffffff" stroke-width="1" opacity=".2" stroke-linecap="round"/>
+      <!-- boca (sonrisa dulce, labios brillantes) -->
+      <path class="mouth" d="M53 70q7 1.6 14 0q-1.8 3.6-7 3.6t-7-3.6z" fill="url(#lip)"/>
+      <path d="M53 70q7 1.6 14 0" stroke="#a83a52" stroke-width=".8" fill="none" opacity=".55"/>
+      <path d="M55.5 70.6q4.5 .9 9 0" stroke="#7a2238" stroke-width=".5" fill="none" opacity=".4"/>
+      <ellipse cx="60" cy="72.4" rx="3.4" ry=".95" fill="#ffffff" opacity=".5"/>
       <!-- flequillo frontal (con raya y brillo) -->
       <path d="M35 53c1-19 12-29 25-29s24 10 25 29c-5-10-11-14-16-10 3-4-2-8-9-8s-12 4-9 8c-5-4-11 0-16 10z" fill="url(#hair)"/>
       <path d="M39 53c2-13 9-21 16-24-7 6-11 15-12 25z" fill="url(#hairHi)" opacity=".6"/>
@@ -434,12 +478,30 @@ const CHIP_POOL=[
   {c:'c3',cat:'Simple',label:'Quiénes pueden optar',q:'¿Quiénes pueden pertenecer al régimen simple de tributación?'},
   {c:'c4',cat:'Descuentos',label:'ICA como descuento',q:'¿Qué porcentaje del ICA puede tomarse como descuento en renta?'},
 ];
+const CHIP_ICONS={Renta:'🏢',Declaración:'📄',UVT:'📐',IVA:'🧾',Retención:'💸',Sanciones:'⚖️',Facturación:'🧮','4x1000':'🏦',Simple:'🌱',Descuentos:'🏷️'};
 function renderChips(){
   const sel=[...CHIP_POOL].sort(()=>Math.random()-.5).slice(0,4);
   document.getElementById('chips').innerHTML=sel.map(x=>
-    `<button class="chip ${x.c}" data-q="${x.q.replace(/"/g,'&quot;')}"><b>${x.cat}</b> · ${x.label}</button>`).join('');
+    `<button class="chip ${x.c}" data-q="${x.q.replace(/"/g,'&quot;')}"><span class="ic">${CHIP_ICONS[x.cat]||'📌'}</span><span class="ct"><b>${x.cat}</b><span>${x.label}</span></span></button>`).join('');
 }
 renderChips();
+
+// ── #2 Resaltar artículos y cifras en las respuestas ──
+function enhanceAnswer(el){
+  const reArt=/\b(art[íi]culos?|art\.)\s*(\d+(?:-\d+)?)/gi;
+  const reFig=/(\$\s?\d[\d.,]*|\d[\d.,]*\s?%|\d[\d.,]*\s?UVT)/g;
+  const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  nodes.forEach(node=>{
+    if(node.parentNode.closest('a,.art-link,.fig,code,pre'))return;
+    let html=esc(node.nodeValue);
+    html=html.replace(reArt,(m,p1,p2)=>`<span class="art-link" data-num="${p2}">${m}</span>`);
+    html=html.replace(reFig,'<span class="fig">$1</span>');
+    if(html!==esc(node.nodeValue)){const sp=document.createElement('span');sp.innerHTML=html;node.parentNode.replaceChild(sp,node);}
+  });
+}
+document.addEventListener('click',e=>{const a=e.target.closest('.art-link');if(a&&a.dataset.num)openArticle(a.dataset.num);});
 
 const thread=document.getElementById('thread'),main=document.getElementById('main'),hero=document.getElementById('hero');
 const form=document.getElementById('form'),input=document.getElementById('input'),sendBtn=document.getElementById('send');
@@ -570,6 +632,7 @@ form.addEventListener('submit',async e=>{
   if(hero)hero.remove();
   addUser(text);
   const {body,answer,av}=addSofia();
+  av.parentElement.classList.add('thinking');
   let acc='',started=false;
   try{
     const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history})});
@@ -583,21 +646,66 @@ form.addEventListener('submit',async e=>{
         for(const line of block.split('\n')){if(line.startsWith('event:'))ev=line.slice(6).trim();else if(line.startsWith('data:'))data+=line.slice(5).trim();}
         if(!data)continue;let obj;try{obj=JSON.parse(data);}catch{continue;}
         if(ev==='sources'){body._sources=obj.sources;}
-        else if(ev==='error'){answer.innerHTML='<p>⚠️ '+(obj.message||'Error')+'</p>';av.parentElement.classList.remove('speaking');}
+        else if(ev==='error'){answer.innerHTML='<p>⚠️ '+(obj.message||'Error')+'</p>';av.parentElement.classList.remove('thinking','speaking');}
         else if(ev==='done'){av.parentElement.classList.remove('speaking');}
         else if(obj.t!==undefined){
-          if(!started){started=true;answer.innerHTML='';av.parentElement.classList.add('speaking');}
+          if(!started){started=true;answer.innerHTML='';av.parentElement.classList.remove('thinking');av.parentElement.classList.add('speaking');}
           acc+=obj.t;answer.innerHTML=md(acc);scroll();
         }
       }
     }
-    av.parentElement.classList.remove('speaking');
-    if(started)addControls(body,answer,av);
+    av.parentElement.classList.remove('thinking','speaking');
+    if(started){enhanceAnswer(answer);addControls(body,answer,av);}
     if(body._sources)renderSources(body,body._sources);
     history.push({role:'user',content:text});history.push({role:'assistant',content:acc});
-  }catch(err){answer.innerHTML='<p>⚠️ Error de conexión. Intenta de nuevo.</p>';av.parentElement.classList.remove('speaking');}
+  }catch(err){answer.innerHTML='<p>⚠️ Error de conexión. Intenta de nuevo.</p>';av.parentElement.classList.remove('thinking','speaking');}
   finally{busy=false;sendBtn.disabled=false;input.focus();}
 });
+
+// ── #1 Modo voz a pantalla completa (conversación hablada) ──
+const vmode=document.getElementById('vmode'),vstatus=document.getElementById('vstatus'),vans=document.getElementById('vans'),vmic=document.getElementById('vmic');
+document.getElementById('vmodeAvatar').innerHTML=avatarSVG();
+const vAv=document.getElementById('vmodeAvatar').querySelector('.sofia-avatar');
+const vHist=[]; let vBusy=false;
+function openVmode(){ttsStop();vmode.classList.add('on');vstatus.textContent='Toca el micrófono y háblame';vans.textContent='';}
+function closeVmode(){vmode.classList.remove('on');ttsStop();try{vrec&&vrec.stop();}catch(_){}vmode.parentElement&&0;}
+document.getElementById('vmodeBtn').onclick=openVmode;
+document.getElementById('vclose').onclick=closeVmode;
+
+let vrec=null,vListening=false;
+if(SR){ vrec=new SR(); vrec.lang='es-CO'; vrec.interimResults=true; vrec.continuous=false; vrec.maxAlternatives=1;
+  vrec.onresult=(e)=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;vans.textContent='“'+t+'”';
+    if(e.results[e.results.length-1].isFinal){const q=t.trim();vListening=false;vmic.classList.remove('live');try{vrec.stop();}catch(_){}if(q)vAsk(q);}};
+  vrec.onend=()=>{vListening=false;vmic.classList.remove('live');};
+  vrec.onerror=()=>{vListening=false;vmic.classList.remove('live');vstatus.textContent='No te escuché, intenta de nuevo';};
+}
+vmic.onclick=()=>{
+  if(!SR){vstatus.textContent='Tu navegador no soporta voz (usa Chrome/Edge)';return;}
+  if(vBusy)return;
+  if(vListening){try{vrec.stop();}catch(_){}return;}
+  ttsStop();vListening=true;vmic.classList.add('live');vstatus.textContent='Escuchando…';vans.textContent='';
+  try{vrec.start();}catch(_){vListening=false;vmic.classList.remove('live');}
+};
+async function vAsk(text){
+  vBusy=true;vmic.disabled=true;vstatus.textContent='SOFIA está pensando…';vAv.parentElement.classList.add('thinking');
+  let acc='';
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:vHist})});
+    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
+    while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
+      const blocks=buf.split('\n\n');buf=blocks.pop();
+      for(const block of blocks){let ev=null,data='';for(const line of block.split('\n')){if(line.startsWith('event:'))ev=line.slice(6).trim();else if(line.startsWith('data:'))data+=line.slice(5).trim();}
+        if(!data)continue;let obj;try{obj=JSON.parse(data);}catch{continue;}
+        if(obj.t!==undefined){acc+=obj.t;vans.textContent=acc;}}}
+    vAv.parentElement.classList.remove('thinking');
+    vHist.push({role:'user',content:text});vHist.push({role:'assistant',content:acc});
+    vstatus.textContent='SOFIA está hablando…';
+    ttsSpeak(acc,null,vAv);
+    const check=setInterval(()=>{if(!speechSynthesis.speaking){clearInterval(check);if(vmode.classList.contains('on'))vstatus.textContent='Toca el micrófono para seguir';}},400);
+  }catch(e){vstatus.textContent='Error de conexión. Intenta de nuevo.';vAv.parentElement.classList.remove('thinking');}
+  finally{vBusy=false;vmic.disabled=false;}
+}
+
 </script>
 </body>
 </html>
