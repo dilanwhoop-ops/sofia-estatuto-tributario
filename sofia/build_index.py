@@ -80,8 +80,9 @@ def build_chunks(articles: list[dict]) -> list[dict]:
                     "embed_text": embed_text,
                 })
 
+        # Sólo se indexa la NORMA VIGENTE (las versiones anteriores/derogadas no se
+        # tienen en cuenta para responder, para dar respuestas certeras y actuales).
         _emit(a["texto"], anterior=False)
-        _emit(a.get("texto_anterior", ""), anterior=True)
     return chunks
 
 

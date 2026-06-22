@@ -1,0 +1,26 @@
+{
+  "id": "sancion_no_declarar",
+  "titulo": "Sanción por no declarar",
+  "tema": "Sanciones",
+  "descripcion": "Estima la base de la sanción por no declarar según el tipo de impuesto omitido (Art. 643).",
+  "articulos": ["643"],
+  "advertencia": "La sanción la impone la DIAN. Estos porcentajes son la base general del Art. 643; pueden reducirse si se declara antes/después del emplazamiento.",
+  "root": "n1",
+  "nodes": {
+    "n1": {"type": "decision", "pregunta": "¿Qué declaración dejaste de presentar estando obligado?",
+      "opciones": [
+        {"texto": "Renta y complementarios", "goto": "r_renta"},
+        {"texto": "IVA o Consumo", "goto": "r_iva"},
+        {"texto": "Retención en la fuente", "goto": "r_rete"}
+      ]},
+    "r_renta": {"type": "result", "resultado": "Renta: 20% del valor de las consignaciones o ingresos brutos",
+      "detalle": "La sanción es el 20% del valor de las consignaciones bancarias o ingresos brutos del periodo, o de los ingresos brutos de la última declaración, el que fuere superior.",
+      "articulos": ["643"]},
+    "r_iva": {"type": "result", "resultado": "IVA/Consumo: 10% de consignaciones o ingresos brutos",
+      "detalle": "La sanción es el 10% del valor de las consignaciones o ingresos brutos del periodo, o de los ingresos brutos de la última declaración, el que fuere superior.",
+      "articulos": ["643"]},
+    "r_rete": {"type": "result", "resultado": "Retención: 10% de los cheques girados / costos / gastos",
+      "detalle": "La sanción es el 10% de los cheques girados u otros medios de pago, o de los costos y gastos del periodo, o el 100% de las retenciones de la última declaración, el que fuere superior.",
+      "articulos": ["643"]}
+  }
+}

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOFIA · Panel de revisión</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+  :root{--bg:#f4f6fe;--ink:#0e1330;--muted:#59618a;--line:#e6e9f7;--card:#fff;
+    --grad:linear-gradient(120deg,#06b6d4,#6366f1,#d946ef);--teal:#10b981;--shadow:0 2px 6px rgba(20,24,70,.05),0 16px 40px rgba(20,24,70,.09)}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif;line-height:1.55}
+  header{display:flex;align-items:center;gap:.7rem;padding:.85rem clamp(1rem,4vw,2rem);background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  .logo{width:38px;height:38px;border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#fff;font-family:'Fraunces',serif;font-weight:700}
+  header h1{font-family:'Fraunces',serif;font-size:1.15rem;margin:0}
+  header h1 small{display:block;font-family:'Plus Jakarta Sans';font-size:.7rem;color:var(--muted);font-weight:500}
+  header a{margin-left:auto;font-size:.82rem;color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:.4rem .8rem;border-radius:10px}
+  .wrap{max-width:1080px;margin:0 auto;padding:1.4rem clamp(1rem,4vw,2rem) 3rem}
+  .tabs{display:flex;gap:.5rem;margin-bottom:1.3rem}
+  .tab{border:1px solid var(--line);background:#fff;padding:.6rem 1.1rem;border-radius:12px;cursor:pointer;font-weight:600;font-size:.9rem;color:var(--muted)}
+  .tab.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(99,102,241,.28)}
+  .panel{display:none}.panel.on{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+  /* grafo */
+  .gbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+  .gbar input{flex:1;min-width:200px;border:1px solid var(--line);border-radius:12px;padding:.6rem .9rem;font:inherit;outline:none}
+  .gbar input:focus{border-color:#a5b4fc}
+  .gbar button{border:0;background:var(--grad);color:#fff;border-radius:12px;padding:.6rem 1rem;font-weight:600;cursor:pointer}
+  #net{height:520px;border-radius:16px;border:1px solid var(--line);background:#fbfcff}
+  .hint{font-size:.82rem;color:var(--muted);margin:.4rem 0 0}
+  .tops{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem}
+  .top{font-size:.76rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:.28rem .6rem;cursor:pointer;color:#3730a3;font-weight:600}
+  .top:hover{border-color:#a5b4fc}
+  /* árboles */
+  .tree-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+  .tcard{padding:1.1rem;cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .tcard:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(20,24,70,.12)}
+  .tcard h3{margin:.2rem 0 .35rem;font-size:1rem;font-family:'Fraunces',serif}
+  .tcard p{margin:0;font-size:.82rem;color:var(--muted)}
+  .tema{display:inline-block;font-size:.68rem;font-weight:700;color:#3730a3;background:#eef2ff;border-radius:99px;padding:.18rem .55rem;margin-bottom:.4rem}
+  .badge{display:inline-block;font-size:.7rem;font-weight:700;border-radius:99px;padding:.2rem .6rem;margin-top:.7rem}
+  .b-pendiente{background:#fff7ed;color:#c2410c}.b-aprobado{background:#ecfdf5;color:#047857}.b-rechazado{background:#fef2f2;color:#b91c1c}
+  /* detalle árbol */
+  .overlay{position:fixed;inset:0;background:rgba(14,19,48,.5);display:none;z-index:30;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
+  .overlay.on{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:780px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.3)}
+  .mh{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:1.1rem 1.4rem;display:flex;align-items:start;gap:1rem}
+  .mh h2{margin:0;font-family:'Fraunces',serif;font-size:1.2rem}.mh .x{margin-left:auto;border:0;background:#f1f4f9;width:32px;height:32px;border-radius:50%;font-size:1.2rem;cursor:pointer;color:var(--muted)}
+  .mb{padding:1.2rem 1.4rem}
+  .node{border:1px solid var(--line);border-left:4px solid #94a3b8;border-radius:10px;padding:.7rem .9rem;margin:.6rem 0;background:#fcfdff}
+  .node.root{border-left-color:#6366f1}.node.decision{border-left-color:#0ea5e9}.node.result{border-left-color:#10b981}.node.info{border-left-color:#f59e0b}
+  .node .nid{font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .node .q{font-weight:600;margin:.2rem 0}
+  .opt{font-size:.86rem;margin:.15rem 0 .15rem .4rem;color:#334155}.opt b{color:#0ea5e9}
+  .arts{font-size:.75rem;color:var(--muted);margin-top:.3rem}
+  .warn{font-size:.8rem;background:#fff7ed;color:#9a3412;border-radius:10px;padding:.5rem .7rem;margin:.5rem 0}
+  .approve-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:.9rem 1.4rem;display:flex;gap:.6rem;align-items:center}
+  .approve-bar .sp{margin-right:auto;font-size:.82rem;color:var(--muted)}
+  .btn{border:0;border-radius:11px;padding:.6rem 1.1rem;font-weight:700;cursor:pointer;font-size:.88rem}
+  .btn-ap{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+  .btn-re{background:#fff;border:1px solid #fecaca;color:#b91c1c}
+  .btn-pe{background:#fff;border:1px solid var(--line);color:var(--muted)}
+  /* login */
+  .login{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:50}
+  .login .box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:2rem;max-width:360px;width:100%;text-align:center;box-shadow:var(--shadow)}
+  .login h2{font-family:'Fraunces',serif;margin:.4rem 0}
+  .login input{width:100%;border:1px solid var(--line);border-radius:12px;padding:.7rem;font:inherit;margin:.7rem 0;outline:none}
+  .login button{width:100%;border:0;background:var(--grad);color:#fff;border-radius:12px;padding:.7rem;font-weight:700;cursor:pointer}
+  .login .err{color:#b91c1c;font-size:.82rem;min-height:1rem}
+</style>
+</head>
+<body>
+  <div class="login" id="login">
+    <div class="box">
+      <div class="logo" style="margin:0 auto">S</div>
+      <h2>Panel de revisión</h2>
+      <p style="color:var(--muted);font-size:.85rem;margin:.2rem 0 0">Ingresa la clave de administrador</p>
+      <input type="password" id="keyInput" placeholder="Clave" />
+      <button id="keyBtn">Entrar</button>
+      <div class="err" id="keyErr"></div>
+    </div>
+  </div>
+
+  <header>
+    <div class="logo">S</div>
+    <h1>SOFIA · Revisión<small>Grafo de artículos y árboles de decisión</small></h1>
+    <a href="/">← Volver al chat</a>
+  </header>
+
+  <div class="wrap" id="app" style="display:none">
+    <div class="tabs">
+      <button class="tab on" data-p="grafo">🕸️ Grafo de artículos</button>
+      <button class="tab" data-p="arboles">🌳 Árboles de decisión</button>
+    </div>
+
+    <section class="panel on" id="p-grafo">
+      <div class="gbar">
+        <input id="gsearch" placeholder="Busca un artículo (número o tema) — ej. 240, IVA, retención…" />
+        <button id="gbtn">Ver conexiones</button>
+      </div>
+      <div id="net"></div>
+      <p class="hint" id="ghint">Escribe un artículo y pulsa «Ver conexiones» para explorar a qué otros artículos remite. Más conectados:</p>
+      <div class="tops" id="tops"></div>
+    </section>
+
+    <section class="panel" id="p-arboles">
+      <p class="hint" style="margin-bottom:1rem">Revisa cada árbol y <b>apruébalo o recházalo manualmente</b>. Solo tú decides cuáles quedan validados.</p>
+      <div class="tree-list" id="treeList"></div>
+    </section>
+  </div>
+
+  <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<script>
+let KEY=localStorage.getItem('sofia-admin-key')||'';
+const login=document.getElementById('login'),app=document.getElementById('app');
+async function api(path,opts={}){
+  opts.headers=Object.assign({'X-Admin-Key':KEY,'Content-Type':'application/json'},opts.headers||{});
+  return fetch(path,opts);
+}
+async function tryEnter(k){
+  KEY=k; const r=await api('/api/admin/trees');
+  if(r.status===200){localStorage.setItem('sofia-admin-key',k);login.style.display='none';app.style.display='block';init();return true;}
+  return false;
+}
+document.getElementById('keyBtn').onclick=async()=>{
+  const k=document.getElementById('keyInput').value.trim();
+  const ok=await tryEnter(k); if(!ok)document.getElementById('keyErr').textContent='Clave incorrecta';
+};
+document.getElementById('keyInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('keyBtn').click();});
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+t.dataset.p).classList.add('on');
+});
+
+let GRAPH=null, NET=null;
+async function init(){ await loadGraph(); await loadTrees(); }
+
+async function loadGraph(){
+  const r=await api('/api/admin/graph'); GRAPH=await r.json();
+  const byId={}; GRAPH.nodes.forEach(n=>byId[n.id]=n); GRAPH._byId=byId;
+  GRAPH._out={}; GRAPH._in={};
+  GRAPH.edges.forEach(e=>{(GRAPH._out[e.source]=GRAPH._out[e.source]||[]).push(e.target);(GRAPH._in[e.target]=GRAPH._in[e.target]||[]).push(e.source);});
+  const tops=[...GRAPH.nodes].sort((a,b)=>b.grado-a.grado).slice(0,12);
+  document.getElementById('tops').innerHTML=tops.map(n=>`<span class="top" data-id="${n.id}">Art. ${n.id} (${n.grado})</span>`).join('');
+  document.querySelectorAll('.top').forEach(t=>t.onclick=()=>focusNode(t.dataset.id));
+  if(tops[0])focusNode(tops[0].id);
+}
+function findNode(q){
+  q=q.trim().toLowerCase(); if(!q)return null;
+  if(GRAPH._byId[q])return q;
+  const hit=GRAPH.nodes.find(n=>String(n.id)===q)||GRAPH.nodes.find(n=>(n.epigrafe||'').toLowerCase().includes(q));
+  return hit?hit.id:null;
+}
+function focusNode(id){
+  if(!GRAPH._byId[id])return;
+  const nb=new Set([id]);(GRAPH._out[id]||[]).forEach(x=>nb.add(x));(GRAPH._in[id]||[]).forEach(x=>nb.add(x));
+  const nodes=[...nb].map(x=>{const n=GRAPH._byId[x];return{id:x,label:'Art. '+x,title:(n&&n.epigrafe)||'',
+    color:x===id?{background:'#6366f1',border:'#4f46e5'}:{background:'#e0e7ff',border:'#a5b4fc'},
+    font:{color:x===id?'#fff':'#1e1b4b'},shape:'dot',size:x===id?22:14};});
+  const edges=[]; (GRAPH._out[id]||[]).forEach(t=>edges.push({from:id,to:t,arrows:'to',color:'#c7d2fe'}));
+  (GRAPH._in[id]||[]).forEach(s=>edges.push({from:s,to:id,arrows:'to',color:'#fbcfe8'}));
+  const data={nodes:new vis.DataSet(nodes),edges:new vis.DataSet(edges)};
+  const opts={physics:{stabilization:true,barnesHut:{springLength:120}},interaction:{hover:true},
+    nodes:{borderWidth:2,font:{size:13}}};
+  if(NET)NET.destroy(); NET=new vis.Network(document.getElementById('net'),data,opts);
+  NET.on('click',p=>{if(p.nodes&&p.nodes[0])focusNode(p.nodes[0]);});
+  const n=GRAPH._byId[id];
+  document.getElementById('ghint').innerHTML=`<b>Art. ${id}</b> — ${n.epigrafe||''} · remite a ${(GRAPH._out[id]||[]).length}, citado por ${(GRAPH._in[id]||[]).length}. Más conectados:`;
+}
+document.getElementById('gbtn').onclick=()=>{const id=findNode(document.getElementById('gsearch').value);if(id)focusNode(id);else document.getElementById('ghint').textContent='No encontré ese artículo.';};
+document.getElementById('gsearch').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('gbtn').click();});
+
+let TREES=[];
+async function loadTrees(){
+  const r=await api('/api/admin/trees'); const d=await r.json(); TREES=d.trees||[];
+  document.getElementById('treeList').innerHTML=TREES.map(t=>`
+    <div class="card tcard" data-id="${t.id}">
+      <span class="tema">${t.tema||'General'}</span>
+      <h3>${t.titulo}</h3><p>${t.descripcion||''}</p>
+      <span class="badge b-${t.estado}">${t.estado.toUpperCase()}</span>
+    </div>`).join('');
+  document.querySelectorAll('.tcard').forEach(c=>c.onclick=()=>openTree(c.dataset.id));
+}
+function nodeHTML(tree){
+  const nodes=tree.nodes||{}; const root=tree.root;
+  const order=[root,...Object.keys(nodes).filter(k=>k!==root)];
+  return order.filter(k=>nodes[k]).map(k=>{
+    const n=nodes[k]; const cls=(k===root?'root ':'')+(n.type||'');
+    let inner=`<div class="nid">${k===root?'INICIO · ':''}${(n.type||'').toUpperCase()}</div>`;
+    if(n.type==='decision'){inner+=`<div class="q">${n.pregunta||''}</div>`+(n.opciones||[]).map(o=>`<div class="opt">▸ <b>${o.texto}</b> → ${o.goto}</div>`).join('');}
+    else if(n.type==='result'){inner+=`<div class="q">✅ ${n.resultado||''}</div><div style="font-size:.86rem;color:#334155">${n.detalle||''}</div>`+(n.articulos?`<div class="arts">📑 ${n.articulos.map(a=>'Art. '+a).join(', ')}</div>`:'');}
+    else{inner+=`<div style="font-size:.86rem;color:#334155">${n.texto||''}</div>`;}
+    return `<div class="node ${cls}">${inner}</div>`;
+  }).join('');
+}
+function openTree(id){
+  const t=TREES.find(x=>x.id===id); if(!t)return; const tr=t.tree;
+  document.getElementById('modal').innerHTML=`
+    <div class="mh"><div><h2>${tr.titulo}</h2><div style="font-size:.78rem;color:var(--muted)">${tr.tema||''} · ${(tr.articulos||[]).map(a=>'Art. '+a).join(', ')}</div></div>
+      <button class="x" onclick="document.getElementById('overlay').classList.remove('on')">×</button></div>
+    <div class="mb">${tr.advertencia?`<div class="warn">⚠️ ${tr.advertencia}</div>`:''}${nodeHTML(tr)}</div>
+    <div class="approve-bar"><span class="sp">Estado actual: <b>${t.estado.toUpperCase()}</b>${t.fecha?' · '+t.fecha:''}</span>
+      <button class="btn btn-re" onclick="setEstado('${id}','rechazado')">Rechazar</button>
+      <button class="btn btn-pe" onclick="setEstado('${id}','pendiente')">Pendiente</button>
+      <button class="btn btn-ap" onclick="setEstado('${id}','aprobado')">✓ Aprobar</button></div>`;
+  document.getElementById('overlay').classList.add('on');
+}
+async function setEstado(id,estado){
+  const r=await api(`/api/admin/trees/${id}/estado`,{method:'POST',body:JSON.stringify({estado})});
+  if(r.status===200){await loadTrees();document.getElementById('overlay').classList.remove('on');}
+}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')e.target.classList.remove('on');});
+
+// auto-login si ya hay clave guardada
+if(KEY) tryEnter(KEY).then(ok=>{if(!ok){login.style.display='grid';}}); else login.style.display='grid';
+</script>
+</body>
+</html>

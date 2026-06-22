@@ -1,0 +1,28 @@
+{
+  "id": "regimen_simple",
+  "titulo": "¿Puedo optar por el Régimen Simple de Tributación (SIMPLE)?",
+  "tema": "Régimen Simple",
+  "descripcion": "Verifica los requisitos generales para inscribirse en el Régimen Simple de Tributación (Art. 905 y 906).",
+  "articulos": ["905", "906"],
+  "advertencia": "El SIMPLE es opcional y se declara anualmente. Los topes están en UVT del año gravable.",
+  "root": "n1",
+  "nodes": {
+    "n1": {"type": "decision", "pregunta": "¿Eres persona natural que desarrolla empresa, o persona jurídica cuyos socios son personas naturales residentes?",
+      "opciones": [{"texto": "Sí", "goto": "n2"}, {"texto": "No", "goto": "r_no"}]},
+    "n2": {"type": "decision", "pregunta": "¿Tus ingresos brutos ordinarios o extraordinarios del año anterior fueron inferiores a 100.000 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "n3"}, {"texto": "No", "goto": "r_no"}]},
+    "n3": {"type": "decision", "pregunta": "¿Estás al día con tus obligaciones tributarias (y con el RUT y la inscripción)?",
+      "opciones": [{"texto": "Sí", "goto": "n4"}, {"texto": "No", "goto": "r_pendiente"}]},
+    "n4": {"type": "decision", "pregunta": "¿Tu actividad NO está dentro de las excluidas del Art. 906 (p. ej. actividades financieras, de seguros, factoring, etc.)?",
+      "opciones": [{"texto": "Correcto, no está excluida", "goto": "r_si"}, {"texto": "Sí está excluida", "goto": "r_no"}]},
+    "r_si": {"type": "result", "resultado": "Puedes optar por el Régimen Simple (SIMPLE)",
+      "detalle": "Cumples los requisitos generales del Art. 905. Debes inscribirte en el SIMPLE en el RUT dentro de los plazos previstos.",
+      "articulos": ["905"]},
+    "r_no": {"type": "result", "resultado": "No puedes optar por el SIMPLE",
+      "detalle": "No cumples alguno de los requisitos del Art. 905 o tu actividad está excluida según el Art. 906.",
+      "articulos": ["905", "906"]},
+    "r_pendiente": {"type": "result", "resultado": "Primero regulariza tus obligaciones",
+      "detalle": "Debes ponerte al día con tus obligaciones tributarias y el RUT antes de poder optar por el SIMPLE.",
+      "articulos": ["905"]}
+  }
+}

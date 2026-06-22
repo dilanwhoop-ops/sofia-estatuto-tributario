@@ -1,0 +1,29 @@
+{
+  "id": "obligado_declarar_renta",
+  "titulo": "¿Estoy obligado a declarar renta? (Persona natural)",
+  "tema": "Renta",
+  "descripcion": "Determina si una persona natural residente debe presentar declaración de renta según los topes del periodo gravable.",
+  "articulos": ["592", "593", "594-3"],
+  "advertencia": "Los topes se expresan en UVT del año gravable correspondiente. Verifica el valor de la UVT del periodo.",
+  "root": "n1",
+  "nodes": {
+    "n1": {"type": "decision", "pregunta": "¿Tus ingresos brutos del año gravable fueron iguales o superiores a 1.400 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_obligado"}, {"texto": "No", "goto": "n2"}]},
+    "n2": {"type": "decision", "pregunta": "¿Tu patrimonio bruto al 31 de diciembre fue igual o superior a 4.500 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_obligado"}, {"texto": "No", "goto": "n3"}]},
+    "n3": {"type": "decision", "pregunta": "¿Tus consumos con tarjeta de crédito fueron iguales o superiores a 1.400 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_obligado"}, {"texto": "No", "goto": "n4"}]},
+    "n4": {"type": "decision", "pregunta": "¿El total de compras y consumos fue igual o superior a 1.400 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_obligado"}, {"texto": "No", "goto": "n5"}]},
+    "n5": {"type": "decision", "pregunta": "¿El total de consignaciones, depósitos o inversiones financieras fue igual o superior a 1.400 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_obligado"}, {"texto": "No", "goto": "n6"}]},
+    "n6": {"type": "decision", "pregunta": "¿Eres responsable del IVA al cierre del año gravable?",
+      "opciones": [{"texto": "Sí", "goto": "r_obligado"}, {"texto": "No", "goto": "r_no_obligado"}]},
+    "r_obligado": {"type": "result", "resultado": "Sí estás obligado a declarar renta",
+      "detalle": "Al superar al menos uno de los topes, debes presentar la declaración de renta del periodo gravable.",
+      "articulos": ["592", "594-3"]},
+    "r_no_obligado": {"type": "result", "resultado": "No estás obligado a declarar renta",
+      "detalle": "Si no superas ninguno de los topes y no eres responsable de IVA, no estás obligado a declarar. Aun así, puedes hacerlo voluntariamente (Art. 6 E.T.).",
+      "articulos": ["592", "6"]}
+  }
+}

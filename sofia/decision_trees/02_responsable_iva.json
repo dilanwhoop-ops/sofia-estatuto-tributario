@@ -1,0 +1,29 @@
+{
+  "id": "responsable_iva",
+  "titulo": "¿Soy responsable del IVA?",
+  "tema": "IVA",
+  "descripcion": "Determina si una persona natural debe registrarse como responsable del IVA o puede tratarse como no responsable (parágrafo 3 del Art. 437).",
+  "articulos": ["437"],
+  "advertencia": "Aplica a personas naturales comerciantes, artesanos, agricultores, ganaderos y prestadores de servicios. Los topes están en UVT del año.",
+  "root": "n1",
+  "nodes": {
+    "n1": {"type": "decision", "pregunta": "¿Vendes bienes gravados con IVA o prestas servicios gravados con IVA?",
+      "opciones": [{"texto": "Sí", "goto": "n2"}, {"texto": "No (solo excluidos/exentos)", "goto": "r_no_grava"}]},
+    "n2": {"type": "decision", "pregunta": "¿Tus ingresos brutos por la actividad gravada del año anterior o en curso fueron iguales o superiores a 3.500 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_responsable"}, {"texto": "No", "goto": "n3"}]},
+    "n3": {"type": "decision", "pregunta": "¿Tienes más de un establecimiento, local, sede u oficina donde ejerzas la actividad?",
+      "opciones": [{"texto": "Sí", "goto": "r_responsable"}, {"texto": "No", "goto": "n4"}]},
+    "n4": {"type": "decision", "pregunta": "¿Realizaste en el año contratos de venta de bienes/servicios gravados por valor individual igual o superior a 3.500 UVT, o tus consignaciones/inversiones financieras superaron 3.500 UVT?",
+      "opciones": [{"texto": "Sí", "goto": "r_responsable"}, {"texto": "No", "goto": "r_no_responsable"}]},
+    "r_grava": {"type": "info", "texto": "Solo aplica si realizas operaciones gravadas con IVA."},
+    "r_no_grava": {"type": "result", "resultado": "No eres responsable del IVA por esas operaciones",
+      "detalle": "Si únicamente vendes bienes o prestas servicios excluidos o exentos sin obligación de cobrar IVA, no eres responsable por ese concepto.",
+      "articulos": ["437", "476"]},
+    "r_responsable": {"type": "result", "resultado": "Debes registrarte como responsable del IVA",
+      "detalle": "Al superar al menos una de las condiciones del parágrafo 3 del Art. 437, debes inscribirte como responsable del IVA, cobrarlo y declararlo.",
+      "articulos": ["437"]},
+    "r_no_responsable": {"type": "result", "resultado": "Puedes tratarte como NO responsable del IVA",
+      "detalle": "Si no superas ninguna de las condiciones del parágrafo 3 del Art. 437, puedes operar como no responsable del IVA.",
+      "articulos": ["437"]}
+  }
+}

@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -72,6 +72,83 @@ def chat(body: ChatIn) -> StreamingResponse:
             yield _sse("error", {"message": f"{type(e).__name__}: {str(e)[:200]}"})
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── Administración: grafo + árboles de decisión (con clave) ──────────────────
+
+def _check_key(request) -> bool:
+    key = request.headers.get("x-admin-key") or request.query_params.get("key", "")
+    return key == settings.ADMIN_KEY
+
+
+def _load_trees() -> list[dict]:
+    trees = []
+    if settings.DECISION_TREES_DIR.exists():
+        for f in sorted(settings.DECISION_TREES_DIR.glob("*.json")):
+            try:
+                trees.append(json.loads(f.read_text(encoding="utf-8")))
+            except Exception:
+                pass
+    return trees
+
+
+def _load_status() -> dict:
+    if settings.TREES_STATUS.exists():
+        try:
+            return json.loads(settings.TREES_STATUS.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _save_status(data: dict) -> None:
+    settings.TREES_STATUS.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+@app.get("/admin")
+def admin_page() -> FileResponse:
+    return FileResponse(WEB_DIR / "admin.html")
+
+
+@app.get("/api/admin/graph")
+def admin_graph(request: Request) -> JSONResponse:
+    if not _check_key(request):
+        return JSONResponse({"error": "Clave inválida"}, status_code=401)
+    if not settings.GRAPH_JSON.exists():
+        return JSONResponse({"nodes": [], "edges": []})
+    return JSONResponse(json.loads(settings.GRAPH_JSON.read_text(encoding="utf-8")))
+
+
+@app.get("/api/admin/trees")
+def admin_trees(request: Request) -> JSONResponse:
+    if not _check_key(request):
+        return JSONResponse({"error": "Clave inválida"}, status_code=401)
+    status = _load_status()
+    out = []
+    for t in _load_trees():
+        st = status.get(t["id"], {})
+        out.append({
+            "id": t["id"], "titulo": t["titulo"], "tema": t.get("tema", ""),
+            "descripcion": t.get("descripcion", ""), "n_nodos": len(t.get("nodes", {})),
+            "estado": st.get("estado", "pendiente"), "fecha": st.get("fecha", ""),
+            "tree": t,
+        })
+    return JSONResponse({"trees": out})
+
+
+@app.post("/api/admin/trees/{tree_id}/estado")
+async def admin_tree_status(tree_id: str, request: Request) -> JSONResponse:
+    if not _check_key(request):
+        return JSONResponse({"error": "Clave inválida"}, status_code=401)
+    body = await request.json()
+    nuevo = body.get("estado", "")
+    if nuevo not in ("aprobado", "rechazado", "pendiente"):
+        return JSONResponse({"error": "Estado inválido"}, status_code=400)
+    status = _load_status()
+    from datetime import datetime, timezone
+    status[tree_id] = {"estado": nuevo, "fecha": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")}
+    _save_status(status)
+    return JSONResponse({"ok": True, "id": tree_id, "estado": nuevo})
 
 
 @app.get("/")
