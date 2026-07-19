@@ -41,12 +41,36 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
+# Rutas típicas de Tesseract en Windows (para no tener que tocar el PATH)
+_WIN_PATHS = [
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+]
+
+
+def _setup_tesseract() -> None:
+    """Si Tesseract no está en el PATH, lo busca en las rutas típicas de Windows."""
+    try:
+        import shutil
+
+        import pytesseract
+    except Exception:
+        return
+    if shutil.which("tesseract"):
+        return
+    for p in _WIN_PATHS:
+        if Path(p).exists():
+            pytesseract.pytesseract.tesseract_cmd = p
+            return
+
+
 def _ocr_available() -> bool:
     try:
         import pytesseract  # noqa: F401
         from PIL import Image  # noqa: F401
     except Exception:
         return False
+    _setup_tesseract()
     try:
         import pytesseract
         pytesseract.get_tesseract_version()
@@ -62,6 +86,7 @@ def ocr_page(page: "fitz.Page", lang: str = "spa", dpi: int = 300) -> str:
     import pytesseract
     from PIL import Image
 
+    _setup_tesseract()
     pix = page.get_pixmap(dpi=dpi)
     img = Image.open(io.BytesIO(pix.tobytes("png")))
     return pytesseract.image_to_string(img, lang=lang)
