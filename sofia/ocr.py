@@ -48,13 +48,50 @@ _WIN_PATHS = [
 ]
 
 
-def _setup_tesseract() -> None:
-    """Si Tesseract no está en el PATH, lo busca en las rutas típicas de Windows."""
+def _from_registry() -> str | None:
+    """Busca tesseract.exe en el registro de Windows (sirve para instalaciones
+    en rutas no estándar, p. ej. si se instaló dentro de otra carpeta)."""
     try:
+        import winreg
+    except Exception:
+        return None
+    claves = [
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Tesseract-OCR"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Tesseract-OCR"),
+        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Tesseract-OCR"),
+    ]
+    for root, sub in claves:
+        try:
+            with winreg.OpenKey(root, sub) as k:
+                for campo in ("InstallLocation", "UninstallString"):
+                    try:
+                        val, _ = winreg.QueryValueEx(k, campo)
+                    except OSError:
+                        continue
+                    if not val:
+                        continue
+                    val = val.strip('"')
+                    carpeta = Path(val).parent if val.lower().endswith(".exe") else Path(val)
+                    exe = carpeta / "tesseract.exe"
+                    if exe.exists():
+                        return str(exe)
+        except OSError:
+            continue
+    return None
+
+
+def _setup_tesseract() -> None:
+    """Localiza Tesseract: variable de entorno → PATH → rutas típicas → registro."""
+    try:
+        import os
         import shutil
 
         import pytesseract
     except Exception:
+        return
+    env = os.getenv("TESSERACT_CMD")
+    if env and Path(env).exists():
+        pytesseract.pytesseract.tesseract_cmd = env
         return
     if shutil.which("tesseract"):
         return
@@ -62,6 +99,9 @@ def _setup_tesseract() -> None:
         if Path(p).exists():
             pytesseract.pytesseract.tesseract_cmd = p
             return
+    reg = _from_registry()
+    if reg:
+        pytesseract.pytesseract.tesseract_cmd = reg
 
 
 def _ocr_available() -> bool:
