@@ -26,6 +26,19 @@ app = FastAPI(title=settings.PROJECT_NAME)
 class ChatIn(BaseModel):
     message: str
     history: list[dict] = []
+    tree_state: dict | None = None
+
+
+def _tree_sources(numeros: list[str]) -> list[dict]:
+    """Convierte números de artículo del árbol en fuentes citables."""
+    rag = get_sofia().rag
+    out = []
+    for n in numeros:
+        a = rag.article(n) or {}
+        out.append({"ref": f"Art. {n} E.T.", "numero": n,
+                    "epigrafe": a.get("epigrafe", ""), "libro": a.get("libro", ""),
+                    "titulo": a.get("titulo", "")})
+    return out
 
 
 @app.get("/api/health")
@@ -50,12 +63,39 @@ def _sse(event: str | None, data: dict) -> str:
 def chat(body: ChatIn) -> StreamingResponse:
     sofia = get_sofia()
     message = (body.message or "").strip()
+    tree_state = body.tree_state or {}
+
+    def _emit_tree(r: dict):
+        """Emite la respuesta determinista de un árbol de decisión."""
+        yield _sse("sources", {"sources": _tree_sources(r.get("sources", []))})
+        yield _sse("state", {"tree_state": r.get("state")})
+        yield _sse("mode", {"mode": "tree"})
+        yield _sse(None, {"t": r["text"]})
+        yield _sse("done", {})
 
     def gen():
         if not message:
             yield _sse("error", {"message": "Mensaje vacío"})
             return
         try:
+            from sofia.decision_engine import get_decision_engine
+            engine = get_decision_engine()
+
+            # 1) ¿Venimos avanzando dentro de un árbol aprobado?
+            if tree_state.get("tree_id"):
+                r = engine.continue_(tree_state, message)
+                if not r.get("fallback"):
+                    yield from _emit_tree(r)
+                    return
+                # si el árbol dejó de estar aprobado, caemos a RAG
+
+            # 2) ¿La pregunta coincide con un árbol APROBADO?
+            elif (tree := engine.find_tree(message)) is not None:
+                yield from _emit_tree(engine.start(tree))
+                return
+
+            # 3) Fallback: respuesta RAG con citas (estado de árbol vacío)
+            yield _sse("state", {"tree_state": None})
             results = sofia.retrieve(message)
             # Sólo mostramos como "fuentes" los artículos con relevancia real
             # (evita citar artículos al azar en saludos o charla general).

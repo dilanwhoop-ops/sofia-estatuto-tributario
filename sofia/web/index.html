@@ -505,7 +505,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('.art-link');if(a
 
 const thread=document.getElementById('thread'),main=document.getElementById('main'),hero=document.getElementById('hero');
 const form=document.getElementById('form'),input=document.getElementById('input'),sendBtn=document.getElementById('send');
-const history=[]; let busy=false;
+const history=[]; let busy=false; let treeState=null; let vTreeState=null;
 marked.setOptions({breaks:true});
 const md=(t)=>DOMPurify.sanitize(marked.parse(t||''));
 
@@ -635,7 +635,7 @@ form.addEventListener('submit',async e=>{
   av.parentElement.classList.add('thinking');
   let acc='',started=false;
   try{
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history,tree_state:treeState})});
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
     while(true){
       const {value,done}=await reader.read();if(done)break;
@@ -645,7 +645,8 @@ form.addEventListener('submit',async e=>{
         let ev=null,data='';
         for(const line of block.split('\n')){if(line.startsWith('event:'))ev=line.slice(6).trim();else if(line.startsWith('data:'))data+=line.slice(5).trim();}
         if(!data)continue;let obj;try{obj=JSON.parse(data);}catch{continue;}
-        if(ev==='sources'){body._sources=obj.sources;}
+        if(ev==='state'){treeState=obj.tree_state||null;}
+        else if(ev==='sources'){body._sources=obj.sources;}
         else if(ev==='error'){answer.innerHTML='<p>⚠️ '+(obj.message||'Error')+'</p>';av.parentElement.classList.remove('thinking','speaking');}
         else if(ev==='done'){av.parentElement.classList.remove('speaking');}
         else if(obj.t!==undefined){
@@ -690,13 +691,14 @@ async function vAsk(text){
   vBusy=true;vmic.disabled=true;vstatus.textContent='SOFIA está pensando…';vAv.parentElement.classList.add('thinking');
   let acc='';
   try{
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:vHist})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:vHist,tree_state:vTreeState})});
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
     while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
       const blocks=buf.split('\n\n');buf=blocks.pop();
       for(const block of blocks){let ev=null,data='';for(const line of block.split('\n')){if(line.startsWith('event:'))ev=line.slice(6).trim();else if(line.startsWith('data:'))data+=line.slice(5).trim();}
         if(!data)continue;let obj;try{obj=JSON.parse(data);}catch{continue;}
-        if(obj.t!==undefined){acc+=obj.t;vans.textContent=acc;}}}
+        if(ev==='state'){vTreeState=obj.tree_state||null;}
+        else if(obj.t!==undefined){acc+=obj.t;vans.textContent=acc;}}}
     vAv.parentElement.classList.remove('thinking');
     vHist.push({role:'user',content:text});vHist.push({role:'assistant',content:acc});
     vstatus.textContent='SOFIA está hablando…';
