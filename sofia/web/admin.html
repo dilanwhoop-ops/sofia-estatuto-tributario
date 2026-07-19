@@ -69,9 +69,19 @@
   .gbar button:hover{transform:translateY(-2px)}
   .gwrap{position:relative;border-radius:20px;overflow:hidden;box-shadow:0 20px 50px rgba(10,16,40,.35);border:1px solid #1c2550}
   #net{height:540px;background:radial-gradient(900px 500px at 30% 20%,#152046,#080d1e 70%)}
-  .glegend{position:absolute;left:14px;bottom:12px;display:flex;gap:.9rem;font-size:.72rem;color:#9fb0e0;
-    background:rgba(8,13,30,.65);padding:.4rem .7rem;border-radius:99px;backdrop-filter:blur(6px)}
+  .glegend{position:absolute;left:14px;bottom:12px;display:flex;gap:.75rem;flex-wrap:wrap;max-width:calc(100% - 28px);
+    font-size:.71rem;color:#9fb0e0;background:rgba(8,13,30,.7);padding:.45rem .75rem;border-radius:14px;backdrop-filter:blur(6px)}
   .glegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:.3rem;vertical-align:middle}
+  .gmodes{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.8rem}
+  .gmode{border:1px solid var(--line);background:rgba(255,255,255,.8);padding:.5rem 1rem;border-radius:12px;
+    cursor:pointer;font-weight:600;font-size:.84rem;color:var(--muted);transition:.16s}
+  .gmode:hover{transform:translateY(-1px)}
+  .gmode.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px rgba(99,102,241,.3)}
+  .gchk{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:.35rem;cursor:pointer;
+    background:rgba(255,255,255,.8);border:1px solid var(--line);padding:.45rem .8rem;border-radius:12px}
+  .gloading{position:absolute;inset:0;display:none;place-items:center;color:#9fb0e0;font-size:.9rem;
+    background:rgba(8,13,30,.75);backdrop-filter:blur(3px);z-index:2}
+  .gloading.on{display:grid}
   .hint{font-size:.84rem;color:var(--muted);margin:.8rem 0 0}
   .tops{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.7rem}
   .top{font-size:.77rem;border:1px solid var(--line);background:rgba(255,255,255,.85);border-radius:99px;padding:.32rem .7rem;
@@ -94,6 +104,24 @@
   .badge{display:inline-flex;align-items:center;gap:.35rem;font-size:.71rem;font-weight:700;border-radius:99px;padding:.28rem .7rem;margin-top:.85rem}
   .badge i{width:7px;height:7px;border-radius:50%;background:currentColor}
   .b-pendiente{background:#fff7ed;color:#c2410c}.b-aprobado{background:#ecfdf5;color:#047857}.b-rechazado{background:#fef2f2;color:#b91c1c}
+
+  /* generador IA */
+  .genbox{background:rgba(255,255,255,.8);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.7);
+    border-radius:18px;padding:1.1rem 1.2rem;margin-bottom:1.3rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .genbox::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--grad)}
+  .genhead{font-size:.92rem;margin-bottom:.7rem}.genhead span{color:var(--muted);font-size:.82rem}
+  .genrow{display:flex;gap:.6rem;flex-wrap:wrap}
+  .genrow input{flex:1;min-width:190px;border:1px solid var(--line);border-radius:12px;padding:.62rem .9rem;font:inherit;outline:none}
+  .genrow input:focus{border-color:#a5b4fc;box-shadow:0 0 0 4px rgba(99,102,241,.12)}
+  .genrow button{border:0;background:var(--grad);color:#fff;border-radius:12px;padding:.62rem 1.1rem;font-weight:700;cursor:pointer;
+    box-shadow:0 8px 18px rgba(99,102,241,.3);transition:.15s}
+  .genrow button:hover{transform:translateY(-2px)}.genrow button:disabled{opacity:.6;cursor:wait;transform:none}
+  .genmsg{font-size:.83rem;margin-top:.6rem;min-height:1.1rem}
+  .genmsg.ok{color:#047857}.genmsg.err{color:#b91c1c}
+  .cands{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem}
+  .cand{font-size:.75rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:.28rem .65rem;
+    cursor:pointer;color:#4338ca;font-weight:600;transition:.15s}
+  .cand:hover{background:var(--grad);color:#fff;border-color:transparent;transform:translateY(-2px)}
 
   /* modal */
   .overlay{position:fixed;inset:0;background:rgba(14,19,48,.55);display:none;z-index:30;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
@@ -170,13 +198,19 @@
     </div>
 
     <section class="panel on" id="p-grafo">
+      <div class="gmodes">
+        <button class="gmode on" id="mFocus">🔍 Enfocar artículo</button>
+        <button class="gmode" id="mFull">🌐 Vista completa</button>
+        <label class="gchk"><input type="checkbox" id="onlyConn" checked> Solo conectados</label>
+      </div>
       <div class="gbar">
         <input id="gsearch" placeholder="Busca un artículo (número o tema) — ej. 240, IVA, retención…" />
         <button id="gbtn">Ver conexiones</button>
       </div>
       <div class="gwrap">
         <div id="net"></div>
-        <div class="glegend">
+        <div class="gloading" id="gloading">Calculando la red…</div>
+        <div class="glegend" id="glegend">
           <span><i style="background:#818cf8"></i>Artículo</span>
           <span><i style="background:#22d3ee"></i>Remite a</span>
           <span><i style="background:#e879f9"></i>Lo citan</span>
@@ -188,6 +222,17 @@
 
     <section class="panel" id="p-arboles">
       <p class="hint" style="margin:0 0 1.1rem">Revisa cada árbol y <b>apruébalo o recházalo manualmente</b>. SOFIA <b>solo usa los aprobados</b> para responder paso a paso.</p>
+
+      <div class="genbox">
+        <div class="genhead">🤖 <b>Generar borrador con IA</b> <span>— la IA lee el artículo y propone el árbol. Queda <b>pendiente</b> de tu aprobación.</span></div>
+        <div class="genrow">
+          <input id="genNum" placeholder="Nº de artículo — ej. 437, 643, 905" />
+          <button id="genBtn">Generar borrador</button>
+        </div>
+        <div class="genmsg" id="genMsg"></div>
+        <div class="cands" id="cands"></div>
+      </div>
+
       <div class="tree-list" id="treeList"></div>
     </section>
   </div>
@@ -219,7 +264,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
 });
 
 let GRAPH=null, NET=null;
-async function init(){ await loadGraph(); await loadTrees(); }
+async function init(){ await loadGraph(); await loadTrees(); loadCandidatos(); }
 
 async function loadGraph(){
   const r=await api('/api/admin/graph'); GRAPH=await r.json();
@@ -263,10 +308,93 @@ function focusNode(id){
   if(NET)NET.destroy(); NET=new vis.Network(document.getElementById('net'),data,opts);
   NET.on('click',p=>{if(p.nodes&&p.nodes[0])focusNode(p.nodes[0]);});
   const n=GRAPH._byId[id];
+  MODE='focus';
+  document.getElementById('mFocus').classList.add('on');document.getElementById('mFull').classList.remove('on');
+  document.getElementById('glegend').innerHTML='<span><i style="background:#818cf8"></i>Artículo</span><span><i style="background:#22d3ee"></i>Remite a</span><span><i style="background:#e879f9"></i>Lo citan</span>';
   document.getElementById('ghint').innerHTML=`<b>Art. ${id}</b> — ${n.epigrafe||''} · remite a <b>${(GRAPH._out[id]||[]).length}</b>, lo citan <b>${(GRAPH._in[id]||[]).length}</b>. Más conectados:`;
+}
+
+// ── Vista completa estilo Obsidian (toda la red navegable) ──
+const LIBRO_COLORS={'DISPOSICIONES GENERALES':'#94a3b8','LIBRO PRIMERO':'#22d3ee','LIBRO SEGUNDO':'#34d399',
+  'LIBRO TERCERO':'#818cf8','LIBRO CUARTO':'#fbbf24','LIBRO QUINTO':'#e879f9','LIBRO SEXTO':'#fb7185',
+  'LIBRO SÉPTIMO':'#a78bfa','LIBRO SEPTIMO':'#a78bfa','LIBRO OCTAVO':'#f97316'};
+function libroColor(l){
+  if(!l)return '#94a3b8';
+  const up=l.toUpperCase();
+  const k=Object.keys(LIBRO_COLORS).find(x=>up.startsWith(x));
+  return k?LIBRO_COLORS[k]:'#94a3b8';
+}
+let MODE='focus';
+function setMode(m){
+  MODE=m;
+  document.getElementById('mFocus').classList.toggle('on',m==='focus');
+  document.getElementById('mFull').classList.toggle('on',m==='full');
+  if(m==='full')renderFull();
+  else{const top=[...GRAPH.nodes].sort((a,b)=>b.grado-a.grado)[0];if(top)focusNode(top.id);}
+}
+document.getElementById('mFocus').onclick=()=>setMode('focus');
+document.getElementById('mFull').onclick=()=>setMode('full');
+document.getElementById('onlyConn').onchange=()=>{if(MODE==='full')renderFull();};
+
+function renderFull(){
+  if(!GRAPH)return;
+  const load=document.getElementById('gloading');load.classList.add('on');
+  setTimeout(()=>{
+    const only=document.getElementById('onlyConn').checked;
+    const deg=n=>((GRAPH._out[n.id]||[]).length+(GRAPH._in[n.id]||[]).length);
+    const list=GRAPH.nodes.filter(n=>!only||deg(n)>0);
+    const ids=new Set(list.map(n=>n.id));
+    const nodes=list.map(n=>{
+      const d=deg(n),c=libroColor(n.libro);
+      return {id:n.id,label:d>=6?('Art. '+n.id):'',title:`Art. ${n.id} — ${n.epigrafe||''}`,
+        shape:'dot',size:6+Math.min(d*1.6,20),
+        color:{background:c,border:'rgba(255,255,255,.25)',highlight:{background:'#ffffff',border:c}},
+        font:{color:'#c9d4f5',size:11,strokeWidth:0}};
+    });
+    const edges=GRAPH.edges.filter(e=>ids.has(e.source)&&ids.has(e.target))
+      .map(e=>({from:e.source,to:e.target,color:{color:'rgba(148,163,255,.22)',highlight:'#22d3ee'},width:.6}));
+    const data={nodes:new vis.DataSet(nodes),edges:new vis.DataSet(edges)};
+    const opts={layout:{improvedLayout:false},
+      physics:{stabilization:{iterations:180,fit:true},
+        barnesHut:{gravitationalConstant:-3500,springLength:90,springConstant:.02,damping:.5}},
+      interaction:{hover:true,tooltipDelay:150,hideEdgesOnDrag:true},nodes:{borderWidth:1}};
+    if(NET)NET.destroy();NET=new vis.Network(document.getElementById('net'),data,opts);
+    NET.once('stabilizationIterationsDone',()=>{NET.setOptions({physics:false});load.classList.remove('on');});
+    setTimeout(()=>load.classList.remove('on'),12000);
+    NET.on('doubleClick',p=>{if(p.nodes&&p.nodes[0])focusNode(p.nodes[0]);});
+    const libros=[...new Set(list.map(n=>n.libro).filter(Boolean))].sort();
+    document.getElementById('glegend').innerHTML=libros.map(l=>
+      `<span><i style="background:${libroColor(l)}"></i>${l.replace('LIBRO ','L. ')}</span>`).join('');
+    document.getElementById('ghint').innerHTML=`Red completa: <b>${nodes.length}</b> artículos y <b>${edges.length}</b> conexiones. `+
+      `Arrastra para mover · rueda del mouse para zoom · <b>doble clic</b> en un nodo para enfocarlo. Más conectados:`;
+  },40);
 }
 document.getElementById('gbtn').onclick=()=>{const id=findNode(document.getElementById('gsearch').value);if(id)focusNode(id);else document.getElementById('ghint').textContent='No encontré ese artículo.';};
 document.getElementById('gsearch').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('gbtn').click();});
+
+// ── Generador semi-automático de árboles ──
+async function loadCandidatos(){
+  try{
+    const r=await api('/api/admin/candidatos'); const d=await r.json();
+    document.getElementById('cands').innerHTML='<span style="font-size:.75rem;color:var(--muted);width:100%">Sugerencias (artículos con condiciones):</span>'+
+      (d.candidatos||[]).map(c=>`<span class="cand" data-n="${c.numero}" title="${(c.epigrafe||'').replace(/"/g,'')}">Art. ${c.numero}</span>`).join('');
+    document.querySelectorAll('.cand').forEach(c=>c.onclick=()=>{document.getElementById('genNum').value=c.dataset.n;});
+  }catch(e){}
+}
+document.getElementById('genBtn').onclick=async()=>{
+  const num=document.getElementById('genNum').value.trim();
+  const msg=document.getElementById('genMsg'),btn=document.getElementById('genBtn');
+  if(!num){msg.className='genmsg err';msg.textContent='Escribe un número de artículo.';return;}
+  btn.disabled=true;msg.className='genmsg';msg.textContent='🤖 La IA está leyendo el artículo y armando el árbol… (10-20 s)';
+  try{
+    const r=await api('/api/admin/generar',{method:'POST',body:JSON.stringify({numero:num})});
+    const d=await r.json();
+    if(r.status===200){msg.className='genmsg ok';msg.textContent=`✅ Borrador creado: "${d.titulo}" (${d.nodos} nodos). Revísalo abajo y apruébalo.`;await loadTrees();}
+    else{msg.className='genmsg err';msg.textContent='⚠️ '+(d.error||'No se pudo generar.');}
+  }catch(e){msg.className='genmsg err';msg.textContent='⚠️ Error de conexión.';}
+  finally{btn.disabled=false;}
+};
+document.getElementById('genNum').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('genBtn').click();});
 
 let TREES=[];
 async function loadTrees(){
@@ -275,7 +403,7 @@ async function loadTrees(){
   document.getElementById('statAprob').textContent=TREES.filter(t=>t.estado==='aprobado').length;
   document.getElementById('treeList').innerHTML=TREES.map((t,i)=>`
     <div class="tcard s-${t.estado}" data-id="${t.id}" style="animation-delay:${i*.06}s">
-      <span class="tema">${t.tema||'General'}</span>
+      <span class="tema">${t.tema||'General'}</span>${(t.tree&&t.tree.generado_por)?' <span class="tema" style="background:#f5f3ff;color:#7c3aed">🤖 IA</span>':''}
       <h3>${t.titulo}</h3><p>${t.descripcion||''}</p>
       <span class="badge b-${t.estado}"><i></i>${t.estado.toUpperCase()}</span>
     </div>`).join('');

@@ -1,0 +1,92 @@
+{
+ "titulo": "Determinación de obligación de declarar renta",
+ "tema": "Renta",
+ "descripcion": "Determina si una persona natural o sucesión ilíquida está obligada a declarar renta",
+ "triggers": [
+  "declaración de renta",
+  "obligación de declarar",
+  "quiénes no declaran renta"
+ ],
+ "advertencia": "Los topes están en UVT del año correspondiente",
+ "root": "n1",
+ "nodes": {
+  "n1": {
+   "type": "decision",
+   "pregunta": "¿Eres una persona natural o sucesión ilíquida?",
+   "opciones": [
+    {
+     "texto": "Sí",
+     "goto": "n2"
+    },
+    {
+     "texto": "No",
+     "goto": "r_no"
+    }
+   ]
+  },
+  "n2": {
+   "type": "decision",
+   "pregunta": "¿Eres responsable del impuesto a las ventas?",
+   "opciones": [
+    {
+     "texto": "Sí",
+     "goto": "r_no"
+    },
+    {
+     "texto": "No",
+     "goto": "n3"
+    }
+   ]
+  },
+  "n3": {
+   "type": "decision",
+   "pregunta": "¿Tus ingresos brutos en el año fueron inferiores a 1.400 UVT?",
+   "opciones": [
+    {
+     "texto": "Sí",
+     "goto": "n4"
+    },
+    {
+     "texto": "No",
+     "goto": "r_no"
+    }
+   ]
+  },
+  "n4": {
+   "type": "decision",
+   "pregunta": "¿Tu patrimonio bruto al final del año fue inferior a 4.500 UVT?",
+   "opciones": [
+    {
+     "texto": "Sí",
+     "goto": "r_si"
+    },
+    {
+     "texto": "No",
+     "goto": "r_no"
+    }
+   ]
+  },
+  "r_si": {
+   "type": "result",
+   "resultado": "No estás obligado a declarar renta.",
+   "detalle": "Cumples con las condiciones para no estar obligado a presentar declaración de renta.",
+   "articulos": [
+    "592"
+   ]
+  },
+  "r_no": {
+   "type": "result",
+   "resultado": "Estás obligado a declarar renta.",
+   "detalle": "No cumples con las condiciones para estar exento de presentar declaración de renta.",
+   "articulos": [
+    "592"
+   ]
+  }
+ },
+ "id": "auto_592",
+ "articulos": [
+  "592"
+ ],
+ "generado_por": "IA (borrador)",
+ "generado_el": "2026-07-19 18:17"
+}

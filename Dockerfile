@@ -18,3 +18,6 @@ EXPOSE 8000
 
 # OPENAI_API_KEY se inyecta como variable de entorno (secreto) del host.
 CMD ["python", "-m", "sofia.server"]
+
+# OCR para PDFs escaneados (descomenta si el servidor debe hacer OCR):
+# RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-spa && rm -rf /var/lib/apt/lists/*

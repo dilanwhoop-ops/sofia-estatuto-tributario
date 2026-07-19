@@ -176,6 +176,36 @@ def admin_trees(request: Request) -> JSONResponse:
     return JSONResponse({"trees": out})
 
 
+@app.get("/api/admin/candidatos")
+def admin_candidatos(request: Request) -> JSONResponse:
+    """Artículos con condiciones/umbrales: buenos candidatos a árbol."""
+    if not _check_key(request):
+        return JSONResponse({"error": "Clave inválida"}, status_code=401)
+    from sofia.generate_trees import find_candidates
+    return JSONResponse({"candidatos": find_candidates(12)})
+
+
+@app.post("/api/admin/generar")
+async def admin_generar(request: Request) -> JSONResponse:
+    """Genera con IA un BORRADOR de árbol desde un artículo (queda pendiente)."""
+    if not _check_key(request):
+        return JSONResponse({"error": "Clave inválida"}, status_code=401)
+    body = await request.json()
+    numero = str(body.get("numero", "")).strip()
+    if not numero:
+        return JSONResponse({"error": "Falta el número de artículo"}, status_code=400)
+    try:
+        from sofia.generate_trees import generate
+        t = generate(numero)
+    except Exception as e:
+        return JSONResponse({"error": str(e)[:250]}, status_code=400)
+    # Recargar el motor para que reconozca el árbol nuevo (sigue PENDIENTE).
+    import sofia.decision_engine as de
+    de._engine = None
+    return JSONResponse({"ok": True, "id": t["id"], "titulo": t["titulo"],
+                         "nodos": len(t.get("nodes", {}))})
+
+
 @app.post("/api/admin/trees/{tree_id}/estado")
 async def admin_tree_status(tree_id: str, request: Request) -> JSONResponse:
     if not _check_key(request):

@@ -7,3 +7,10 @@ python-dotenv>=1.0.0
 pydantic>=2.0.0
 # Sólo necesario para re-generar el índice desde el PDF (no en runtime):
 pymupdf>=1.24.0
+
+# OCR para PDFs ESCANEADOS (opcional, sólo para preparar documentos nuevos).
+# Requiere además el programa Tesseract instalado en el sistema:
+#   Windows: https://github.com/UB-Mannheim/tesseract/wiki (incluye idioma español)
+#   Linux:   apt-get install tesseract-ocr tesseract-ocr-spa
+# pytesseract>=0.3.10
+# pillow>=10.0.0
